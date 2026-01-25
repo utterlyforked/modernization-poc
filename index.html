@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Legacy Modernization Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -340,7 +341,12 @@
             border-color: var(--accent-blue);
             background: rgba(255, 255, 255, 0.08);
         }
-        
+
+        select option {
+            background: #1a1f3a;
+            color: #ffffff;
+        }
+
         button {
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
             border: none;
@@ -539,7 +545,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_a1')">R</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a1')">Refresh</button>
                     </div>
                 </div>
                 
@@ -597,7 +603,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_a2')">R</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a2')">Refresh</button>
                     </div>
                 </div>
                 
@@ -655,7 +661,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_b1')">R</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b1')">Refresh</button>
                     </div>
                 </div>
                 
@@ -713,7 +719,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_b2')">R</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b2')">Refresh</button>
                     </div>
                 </div>
                 
@@ -774,7 +780,7 @@
                 <div class="new-system-title">* New Multi-Tenant System</div>
                 <div>
                     <span class="modern-badge">MODERN PLATFORM</span>
-                    <button class="refresh-btn" onclick="loadNewSystem()">R</button>
+                    <button class="refresh-btn" onclick="loadNewSystem()">Refresh</button>
                 </div>
             </div>
             
