@@ -153,3 +153,37 @@ docker stop <container_id>
 ---
 
 **Built to demonstrate real-world legacy modernization at scale!** 🚀
+
+## 🐛 Troubleshooting
+
+### No Data Showing
+If you don't see any data in the UI:
+1. Check the Docker logs: `docker logs <container_id>`
+2. Make sure all services started successfully
+3. Try refreshing the page after 5-10 seconds
+4. Check browser console for any errors (F12)
+
+### Data Not Saving
+If writes aren't persisting:
+1. Check that the API is accessible: `curl http://localhost:5000/api/health`
+2. Look at browser network tab (F12) to see if POST requests are succeeding
+3. Check Docker logs for any errors in the API or sync adapter
+
+### Character Encoding Issues
+All emoji characters have been replaced with ASCII equivalents to ensure compatibility across all systems.
+
+### Manual Testing
+You can test the API directly:
+```bash
+# Check health
+curl http://localhost:5000/api/health
+
+# Get all persons
+curl http://localhost:5000/api/persons
+
+# Create a person
+curl -X POST http://localhost:5000/api/persons \
+  -H "Content-Type: application/json" \
+  -d '{"tenant_id":"tenant_a1","firstname":"Test","surname":"User","date_of_birth":"2000-01-01","city":"TestCity","extra_field":"test123"}'
+```
+

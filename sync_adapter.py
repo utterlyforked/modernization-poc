@@ -78,7 +78,7 @@ class SyncAdapter:
     
     def run_sync_loop(self):
         """Run continuous sync loop for all instances"""
-        print("🔄 Starting sync adapter for all 4 legacy instances...")
+        print("Starting sync adapter for all 4 legacy instances...")
         print("   - tenant_a1 (Legacy A - Instance 1)")
         print("   - tenant_a2 (Legacy A - Instance 2)")
         print("   - tenant_b1 (Legacy B - Instance 1)")
@@ -97,7 +97,7 @@ class SyncAdapter:
             
             if total_synced > 0:
                 details = ", ".join(sync_details)
-                print(f"✅ Synced {total_synced} records ({details}) at {datetime.now().strftime('%H:%M:%S')}")
+                print(f"Synced {total_synced} records ({details}) at {datetime.now().strftime('%H:%M:%S')}")
             
             time.sleep(2)  # Poll every 2 seconds
     

@@ -47,7 +47,7 @@ def setup_new_system():
     
     conn.commit()
     conn.close()
-    print("✅ New System database setup complete")
+    print("New System database setup complete")
     print("   Tenant mappings: tenant_a1, tenant_a2, tenant_b1, tenant_b2")
 
 if __name__ == '__main__':

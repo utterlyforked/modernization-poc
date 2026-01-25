@@ -531,7 +531,7 @@
             <div class="panel legacy">
                 <div class="panel-header">
                     <div class="panel-title">
-                        <div class="icon">🔴</div>
+                        <div class="icon">[L]</div>
                         <div>
                             <div>Legacy System A</div>
                             <div class="tenant-label">Instance: tenant_a1</div>
@@ -539,7 +539,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_a1')">⟳</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a1')">R</button>
                     </div>
                 </div>
                 
@@ -589,7 +589,7 @@
             <div class="panel legacy">
                 <div class="panel-header">
                     <div class="panel-title">
-                        <div class="icon">🔴</div>
+                        <div class="icon">[L]</div>
                         <div>
                             <div>Legacy System A</div>
                             <div class="tenant-label">Instance: tenant_a2</div>
@@ -597,7 +597,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_a2')">⟳</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a2')">R</button>
                     </div>
                 </div>
                 
@@ -647,7 +647,7 @@
             <div class="panel legacy">
                 <div class="panel-header">
                     <div class="panel-title">
-                        <div class="icon">🔴</div>
+                        <div class="icon">[L]</div>
                         <div>
                             <div>Legacy System B</div>
                             <div class="tenant-label">Instance: tenant_b1</div>
@@ -655,7 +655,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_b1')">⟳</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b1')">R</button>
                     </div>
                 </div>
                 
@@ -705,7 +705,7 @@
             <div class="panel legacy">
                 <div class="panel-header">
                     <div class="panel-title">
-                        <div class="icon">🔴</div>
+                        <div class="icon">[L]</div>
                         <div>
                             <div>Legacy System B</div>
                             <div class="tenant-label">Instance: tenant_b2</div>
@@ -713,7 +713,7 @@
                     </div>
                     <div>
                         <span class="badge source">SOURCE</span>
-                        <button class="refresh-btn" onclick="loadLegacy('tenant_b2')">⟳</button>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b2')">R</button>
                     </div>
                 </div>
                 
@@ -764,17 +764,17 @@
         <div style="margin: 40px 0; text-align: center; position: relative;">
             <div style="height: 2px; background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-purple), transparent);"></div>
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-dark); padding: 10px 30px; font-size: 12px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); border-radius: 20px;">
-                ⚡ MODERNIZATION LAYER ⚡
+                * MODERNIZATION LAYER *
             </div>
         </div>
         
         <!-- New Multi-Tenant System -->
         <div class="panel new-system-panel">
             <div class="new-system-header">
-                <div class="new-system-title">⚡ New Multi-Tenant System</div>
+                <div class="new-system-title">* New Multi-Tenant System</div>
                 <div>
                     <span class="modern-badge">MODERN PLATFORM</span>
-                    <button class="refresh-btn" onclick="loadNewSystem()">⟳</button>
+                    <button class="refresh-btn" onclick="loadNewSystem()">R</button>
                 </div>
             </div>
             
@@ -808,7 +808,7 @@
                     <label>Extra Field</label>
                     <input type="text" id="new_extra" placeholder="Routes to legacy">
                 </div>
-                <button type="submit" style="grid-column: 1 / -1;">🚀 Write Through New API (Routes to Legacy DB)</button>
+                <button type="submit" style="grid-column: 1 / -1;">> Write Through New API (Routes to Legacy DB)</button>
             </form>
             
             <div class="data-table">

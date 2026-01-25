@@ -77,7 +77,7 @@ def setup_legacy_b_instance(instance_name, tenant_id):
     
     conn.commit()
     conn.close()
-    print(f"✅ Legacy B - {instance_name} ({tenant_id}) setup complete")
+    print(f"Legacy B - {instance_name} ({tenant_id}) setup complete")
 
 if __name__ == '__main__':
     setup_legacy_b_instance('tenant1', 'tenant_b1')

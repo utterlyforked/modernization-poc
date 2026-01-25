@@ -1,20 +1,20 @@
 #!/bin/bash
 
-echo "🚀 Legacy Modernization Demo - Starting..."
-echo "=========================================="
+echo "Starting Legacy Modernization Demo..."
+echo "======================================"
 
 # Setup databases
-echo "📦 Setting up databases..."
+echo "Setting up databases..."
 python3 setup_legacy_a.py
 python3 setup_legacy_b.py
 python3 setup_new_system.py
 
 echo ""
-echo "✅ Databases ready!"
+echo "Databases ready!"
 echo ""
 
 # Start sync adapter in background
-echo "🔄 Starting sync adapter..."
+echo "Starting sync adapter..."
 python3 sync_adapter.py &
 SYNC_PID=$!
 
@@ -22,7 +22,7 @@ SYNC_PID=$!
 sleep 2
 
 # Start API server in background
-echo "🌐 Starting API server..."
+echo "Starting API server..."
 python3 api.py &
 API_PID=$!
 
@@ -30,14 +30,14 @@ API_PID=$!
 sleep 2
 
 # Start HTTP server for frontend
-echo "🎨 Starting web server..."
+echo "Starting web server..."
 python3 -m http.server 8000 &
 HTTP_PID=$!
 
 echo ""
-echo "✅ All services running!"
+echo "All services running!"
 echo ""
-echo "📍 Access the demo at: http://localhost:8000"
+echo "Access the demo at: http://localhost:8000"
 echo ""
 echo "Services:"
 echo "  - Sync Adapter: Running (PID: $SYNC_PID)"
@@ -53,4 +53,4 @@ wait -n
 kill $SYNC_PID $API_PID $HTTP_PID 2>/dev/null
 
 echo ""
-echo "🛑 Services stopped"
+echo "Services stopped"
