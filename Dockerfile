@@ -13,6 +13,7 @@ RUN pip install flask flask-cors --no-cache-dir
 COPY setup_legacy_a.py .
 COPY setup_legacy_b.py .
 COPY setup_new_system.py .
+COPY migrate_add_modernized_only.py .
 COPY sync_adapter.py .
 COPY api.py .
 COPY index.html .

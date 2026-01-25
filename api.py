@@ -133,7 +133,8 @@ def get_persons():
             'date_of_birth': p[5],
             'city': p[6],
             'extra_field': p[7],
-            'synced_at': p[8]
+            'synced_at': p[8],
+            'modernized_only': p[9]
         })
     
     return jsonify(result)
@@ -149,14 +150,29 @@ def create_person():
     
     try:
         legacy_id = WriteThrough.write_to_legacy(tenant_id, data)
-        
+
+        # Insert modernized_only directly into new_system.db (not in legacy)
+        # CDC will sync the legacy fields, and our ON CONFLICT will preserve modernized_only
+        if 'modernized_only' in data and data['modernized_only']:
+            new_conn = sqlite3.connect('new_system.db')
+            new_cursor = new_conn.cursor()
+            # Insert with all required fields; CDC will update other fields when it syncs
+            new_cursor.execute('''
+                INSERT INTO person (tenant_id, legacy_id, firstname, surname, date_of_birth, city, extra_field, modernized_only)
+                VALUES (?, ?, '', '', '', '', '', ?)
+                ON CONFLICT(tenant_id, legacy_id) DO UPDATE SET
+                    modernized_only = excluded.modernized_only
+            ''', (tenant_id, legacy_id, data.get('modernized_only')))
+            new_conn.commit()
+            new_conn.close()
+
         return jsonify({
             'message': 'Person created in legacy system',
             'tenant_id': tenant_id,
             'legacy_id': legacy_id,
             'note': 'CDC will sync to new system shortly'
         }), 201
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -177,6 +193,17 @@ def update_person():
 
         if rows_updated == 0:
             return jsonify({'error': 'Record not found'}), 404
+
+        # Update modernized_only directly in new_system.db (not in legacy)
+        if 'modernized_only' in data:
+            new_conn = sqlite3.connect('new_system.db')
+            new_cursor = new_conn.cursor()
+            new_cursor.execute('''
+                UPDATE person SET modernized_only = ?
+                WHERE tenant_id = ? AND legacy_id = ?
+            ''', (data.get('modernized_only'), tenant_id, legacy_id))
+            new_conn.commit()
+            new_conn.close()
 
         return jsonify({
             'message': 'Person updated in legacy system',

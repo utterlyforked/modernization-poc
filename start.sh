@@ -8,6 +8,7 @@ echo "Setting up databases..."
 python3 setup_legacy_a.py
 python3 setup_legacy_b.py
 python3 setup_new_system.py
+python3 migrate_add_modernized_only.py
 
 echo ""
 echo "Databases ready!"

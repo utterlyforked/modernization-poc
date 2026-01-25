@@ -56,8 +56,8 @@ class SyncAdapter:
         """Insert or update person in new system"""
         cursor = self.new_system_conn.cursor()
         cursor.execute('''
-        INSERT INTO person (tenant_id, legacy_id, firstname, surname, date_of_birth, city, extra_field)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO person (tenant_id, legacy_id, firstname, surname, date_of_birth, city, extra_field, modernized_only)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
         ON CONFLICT(tenant_id, legacy_id) DO UPDATE SET
             firstname = excluded.firstname,
             surname = excluded.surname,

@@ -894,6 +894,10 @@
                     <label>Extra Field</label>
                     <input type="text" id="new_extra" placeholder="Routes to legacy">
                 </div>
+                <div class="form-group">
+                    <label>Modernized Only</label>
+                    <input type="date" id="new_modernized_only" placeholder="New system only">
+                </div>
                 <button type="submit" style="grid-column: 1 / -1;">> Write Through New API (Routes to Legacy DB)</button>
             </form>
             
@@ -908,6 +912,7 @@
                             <th>City</th>
                             <th>Extra Field (Mapped)</th>
                             <th>Synced At</th>
+                            <th>Modernized Only</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -950,6 +955,10 @@
                         <div class="form-group">
                             <label>Extra Field</label>
                             <input type="text" id="editExtraField">
+                        </div>
+                        <div class="form-group">
+                            <label>Modernized Only</label>
+                            <input type="date" id="editModernizedOnly">
                         </div>
                     </div>
 
@@ -1033,6 +1042,7 @@
                     <td>${p.city}</td>
                     <td class="highlight">${p.extra_field || '-'}</td>
                     <td style="font-size: 10px; color: #a0aec0;">${new Date(p.synced_at).toLocaleTimeString()}</td>
+                    <td>${p.modernized_only || '-'}</td>
                     <td><button class="edit-btn" onclick="openEditModal('${p.tenant_id}', ${p.legacy_id})">Edit</button></td>
                 </tr>
             `).join('');
@@ -1082,7 +1092,8 @@
                 surname: document.getElementById('new_surname').value,
                 date_of_birth: document.getElementById('new_dob').value,
                 city: document.getElementById('new_city').value,
-                extra_field: document.getElementById('new_extra').value
+                extra_field: document.getElementById('new_extra').value,
+                modernized_only: document.getElementById('new_modernized_only').value
             };
             
             await fetch(`${API_BASE}/persons`, {
@@ -1121,6 +1132,7 @@
             document.getElementById('editDob').value = person.date_of_birth;
             document.getElementById('editCity').value = person.city;
             document.getElementById('editExtraField').value = person.extra_field || '';
+            document.getElementById('editModernizedOnly').value = person.modernized_only || '';
         }
 
         async function submitEdit(event) {
@@ -1133,7 +1145,8 @@
                 surname: document.getElementById('editSurname').value,
                 date_of_birth: document.getElementById('editDob').value,
                 city: document.getElementById('editCity').value,
-                extra_field: document.getElementById('editExtraField').value
+                extra_field: document.getElementById('editExtraField').value,
+                modernized_only: document.getElementById('editModernizedOnly').value
             };
 
             const response = await fetch(`${API_BASE}/persons`, {

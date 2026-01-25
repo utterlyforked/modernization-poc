@@ -17,6 +17,7 @@ def setup_new_system():
         city TEXT NOT NULL,
         extra_field TEXT,
         synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        modernized_only DATE,
         UNIQUE(tenant_id, legacy_id)
     )
     ''')
