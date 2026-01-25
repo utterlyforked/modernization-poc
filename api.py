@@ -255,6 +255,97 @@ def get_legacy_persons(tenant_id):
     
     return jsonify(result)
 
+@app.route('/api/legacy/<tenant_id>/persons/<int:legacy_id>', methods=['GET'])
+def get_legacy_person(tenant_id, legacy_id):
+    """Get single person from legacy database"""
+    if tenant_id not in TENANT_CONFIG:
+        return jsonify({'error': 'Invalid tenant_id'}), 400
+
+    config = TENANT_CONFIG[tenant_id]
+    conn = sqlite3.connect(config['db'])
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM person WHERE id = ?', (legacy_id,))
+    person = cursor.fetchone()
+    conn.close()
+
+    if not person:
+        return jsonify({'error': 'Record not found'}), 404
+
+    # Return based on schema type
+    if config['type'] == 'legacy_a':
+        return jsonify({
+            'id': person[0],
+            'firstname': person[1],
+            'surname': person[2],
+            'date_of_birth': person[3],
+            'city': person[4],
+            'data_1': person[5],
+            'data_2': person[6],
+            'data_3': person[7]
+        })
+    else:
+        return jsonify({
+            'id': person[0],
+            'firstname': person[1],
+            'surname': person[2],
+            'date_of_birth': person[3],
+            'city': person[4],
+            'data_a': person[5],
+            'data_b': person[6],
+            'data_c': person[7]
+        })
+
+@app.route('/api/legacy/<tenant_id>/persons/<int:legacy_id>', methods=['PUT'])
+def update_legacy_person(tenant_id, legacy_id):
+    """Update person directly in legacy database"""
+    data = request.json
+
+    if tenant_id not in TENANT_CONFIG:
+        return jsonify({'error': 'Invalid tenant_id'}), 400
+
+    config = TENANT_CONFIG[tenant_id]
+    conn = sqlite3.connect(config['db'])
+    cursor = conn.cursor()
+
+    if config['type'] == 'legacy_a':
+        # Update ALL Legacy A fields
+        cursor.execute('''
+        UPDATE person SET
+            firstname=?, surname=?, date_of_birth=?, city=?,
+            data_1=?, data_2=?, data_3=?
+        WHERE id=?
+        ''', (
+            data['firstname'], data['surname'],
+            data['date_of_birth'], data['city'],
+            data.get('data_1', ''), data.get('data_2', ''),
+            data.get('data_3', ''), legacy_id
+        ))
+    else:
+        # Update ALL Legacy B fields
+        cursor.execute('''
+        UPDATE person SET
+            firstname=?, surname=?, date_of_birth=?, city=?,
+            data_a=?, data_b=?, data_c=?
+        WHERE id=?
+        ''', (
+            data['firstname'], data['surname'],
+            data['date_of_birth'], data['city'],
+            data.get('data_a', ''), data.get('data_b', ''),
+            data.get('data_c', ''), legacy_id
+        ))
+
+    conn.commit()
+    rows_updated = cursor.rowcount
+    conn.close()
+
+    if rows_updated == 0:
+        return jsonify({'error': 'Record not found'}), 404
+
+    return jsonify({
+        'message': 'Legacy record updated',
+        'note': 'CDC will sync to new system'
+    }), 200
+
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({

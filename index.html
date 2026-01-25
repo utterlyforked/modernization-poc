@@ -598,6 +598,18 @@
             transform: none;
             box-shadow: none;
         }
+
+        .legacy .edit-btn {
+            background: #4a90e2;
+            color: white;
+            border: 1px solid #357abd;
+            font-family: 'Courier New', monospace;
+        }
+
+        .legacy .edit-btn:hover {
+            background: #357abd;
+            border-color: #2a5f8f;
+        }
     </style>
 </head>
 <body>
@@ -665,7 +677,7 @@
                 
                 <div class="data-table">
                     <table id="table_a1">
-                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th><th>Action</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -723,7 +735,7 @@
                 
                 <div class="data-table">
                     <table id="table_a2">
-                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th><th>Action</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -781,7 +793,7 @@
                 
                 <div class="data-table">
                     <table id="table_b1">
-                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th><th>Action</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -839,7 +851,7 @@
                 
                 <div class="data-table">
                     <table id="table_b2">
-                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th><th>Action</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -969,6 +981,106 @@
                 </form>
             </div>
         </div>
+
+        <!-- Legacy A Edit Modal -->
+        <div id="editLegacyAModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Legacy A Record</h2>
+                    <button type="button" class="close-btn" onclick="closeLegacyAModal()">&times;</button>
+                </div>
+                <form id="editLegacyAForm" onsubmit="submitLegacyAEdit(event)">
+                    <input type="hidden" id="editLegacyATenantId">
+                    <input type="hidden" id="editLegacyARecordId">
+
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="editLegacyAFirstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="editLegacyASurname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="editLegacyADob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="editLegacyACity" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data 1</label>
+                            <input type="text" id="editLegacyAData1">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 2</label>
+                            <input type="text" id="editLegacyAData2">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 3</label>
+                            <input type="text" id="editLegacyAData3">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button type="submit" style="flex: 1;">Save Changes</button>
+                        <button type="button" onclick="closeLegacyAModal()" style="flex: 1; background: rgba(255, 255, 255, 0.1);">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Legacy B Edit Modal -->
+        <div id="editLegacyBModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Legacy B Record</h2>
+                    <button type="button" class="close-btn" onclick="closeLegacyBModal()">&times;</button>
+                </div>
+                <form id="editLegacyBForm" onsubmit="submitLegacyBEdit(event)">
+                    <input type="hidden" id="editLegacyBTenantId">
+                    <input type="hidden" id="editLegacyBRecordId">
+
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="editLegacyBFirstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="editLegacyBSurname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="editLegacyBDob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="editLegacyBCity" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data A</label>
+                            <input type="text" id="editLegacyBDataA">
+                        </div>
+                        <div class="form-group">
+                            <label>Data B</label>
+                            <input type="text" id="editLegacyBDataB">
+                        </div>
+                        <div class="form-group">
+                            <label>Data C</label>
+                            <input type="text" id="editLegacyBDataC">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button type="submit" style="flex: 1;">Save Changes</button>
+                        <button type="button" onclick="closeLegacyBModal()" style="flex: 1; background: rgba(255, 255, 255, 0.1);">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1009,6 +1121,7 @@
                             <td>${p.data_1 || '-'}</td>
                             <td class="highlight">${p.data_2 || '-'}</td>
                             <td>${p.data_3 || '-'}</td>
+                            <td><button class="edit-btn" onclick="openLegacyAModal('${tenantId}', ${p.id})">Edit</button></td>
                         </tr>
                     `;
                 } else {
@@ -1022,6 +1135,7 @@
                             <td>${p.data_a || '-'}</td>
                             <td>${p.data_b || '-'}</td>
                             <td class="highlight">${p.data_c || '-'}</td>
+                            <td><button class="edit-btn" onclick="openLegacyBModal('${tenantId}', ${p.id})">Edit</button></td>
                         </tr>
                     `;
                 }
@@ -1169,10 +1283,126 @@
             document.getElementById('editModal').style.display = 'none';
         }
 
+        // Legacy A Modal Functions
+        async function openLegacyAModal(tenantId, recordId) {
+            document.getElementById('editLegacyAModal').style.display = 'flex';
+
+            const response = await fetch(`${API_BASE}/legacy/${tenantId}/persons/${recordId}`);
+            const person = await response.json();
+
+            document.getElementById('editLegacyATenantId').value = tenantId;
+            document.getElementById('editLegacyARecordId').value = recordId;
+            document.getElementById('editLegacyAFirstname').value = person.firstname;
+            document.getElementById('editLegacyASurname').value = person.surname;
+            document.getElementById('editLegacyADob').value = person.date_of_birth;
+            document.getElementById('editLegacyACity').value = person.city;
+            document.getElementById('editLegacyAData1').value = person.data_1 || '';
+            document.getElementById('editLegacyAData2').value = person.data_2 || '';
+            document.getElementById('editLegacyAData3').value = person.data_3 || '';
+        }
+
+        async function submitLegacyAEdit(event) {
+            event.preventDefault();
+
+            const tenantId = document.getElementById('editLegacyATenantId').value;
+            const recordId = document.getElementById('editLegacyARecordId').value;
+
+            const data = {
+                firstname: document.getElementById('editLegacyAFirstname').value,
+                surname: document.getElementById('editLegacyASurname').value,
+                date_of_birth: document.getElementById('editLegacyADob').value,
+                city: document.getElementById('editLegacyACity').value,
+                data_1: document.getElementById('editLegacyAData1').value,
+                data_2: document.getElementById('editLegacyAData2').value,
+                data_3: document.getElementById('editLegacyAData3').value
+            };
+
+            const response = await fetch(`${API_BASE}/legacy/${tenantId}/persons/${recordId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                closeLegacyAModal();
+                setTimeout(() => {
+                    loadLegacy(tenantId);
+                    loadNewSystem();
+                }, 2500);
+            } else {
+                alert('Update failed');
+            }
+        }
+
+        function closeLegacyAModal() {
+            document.getElementById('editLegacyAModal').style.display = 'none';
+        }
+
+        // Legacy B Modal Functions
+        async function openLegacyBModal(tenantId, recordId) {
+            document.getElementById('editLegacyBModal').style.display = 'flex';
+
+            const response = await fetch(`${API_BASE}/legacy/${tenantId}/persons/${recordId}`);
+            const person = await response.json();
+
+            document.getElementById('editLegacyBTenantId').value = tenantId;
+            document.getElementById('editLegacyBRecordId').value = recordId;
+            document.getElementById('editLegacyBFirstname').value = person.firstname;
+            document.getElementById('editLegacyBSurname').value = person.surname;
+            document.getElementById('editLegacyBDob').value = person.date_of_birth;
+            document.getElementById('editLegacyBCity').value = person.city;
+            document.getElementById('editLegacyBDataA').value = person.data_a || '';
+            document.getElementById('editLegacyBDataB').value = person.data_b || '';
+            document.getElementById('editLegacyBDataC').value = person.data_c || '';
+        }
+
+        async function submitLegacyBEdit(event) {
+            event.preventDefault();
+
+            const tenantId = document.getElementById('editLegacyBTenantId').value;
+            const recordId = document.getElementById('editLegacyBRecordId').value;
+
+            const data = {
+                firstname: document.getElementById('editLegacyBFirstname').value,
+                surname: document.getElementById('editLegacyBSurname').value,
+                date_of_birth: document.getElementById('editLegacyBDob').value,
+                city: document.getElementById('editLegacyBCity').value,
+                data_a: document.getElementById('editLegacyBDataA').value,
+                data_b: document.getElementById('editLegacyBDataB').value,
+                data_c: document.getElementById('editLegacyBDataC').value
+            };
+
+            const response = await fetch(`${API_BASE}/legacy/${tenantId}/persons/${recordId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                closeLegacyBModal();
+                setTimeout(() => {
+                    loadLegacy(tenantId);
+                    loadNewSystem();
+                }, 2500);
+            } else {
+                alert('Update failed');
+            }
+        }
+
+        function closeLegacyBModal() {
+            document.getElementById('editLegacyBModal').style.display = 'none';
+        }
+
         // Close modal on overlay click
         document.addEventListener('click', (e) => {
             if (e.target.id === 'editModal') {
                 closeEditModal();
+            }
+            if (e.target.id === 'editLegacyAModal') {
+                closeLegacyAModal();
+            }
+            if (e.target.id === 'editLegacyBModal') {
+                closeLegacyBModal();
             }
         });
     </script>
