@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legacy Modernization Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0a0e27;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --accent-blue: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --legacy-red: #ff4757;
+            --success: #00f2c3;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        .header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .sync-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            backdrop-filter: blur(10px);
+        }
+        
+        .sync-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        /* Modern Card */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+        
+        /* Legacy System Styling - OLD SCHOOL */
+        .legacy.panel {
+            background: #f5f5f5;
+            border: 2px solid #999;
+            border-radius: 0;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .legacy.panel:hover {
+            transform: none;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .legacy .panel-header {
+            background: #ddd;
+            margin: -25px -25px 15px -25px;
+            padding: 15px 25px;
+            border-bottom: 2px solid #999;
+        }
+        
+        .legacy .panel-title {
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .legacy .panel-title .icon {
+            background: #ff4757;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .legacy .tenant-label {
+            color: #666;
+            font-size: 10px;
+        }
+        
+        .legacy .badge.source {
+            background: #ff4757;
+            color: white;
+            border: none;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .legacy .form-grid {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        
+        .legacy label {
+            color: #333;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            text-transform: none;
+        }
+        
+        .legacy input, .legacy select {
+            background: white;
+            border: 1px solid #999;
+            border-radius: 0;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .legacy input:focus, .legacy select:focus {
+            border-color: #333;
+            background: #ffffcc;
+        }
+        
+        .legacy button[type="submit"] {
+            background: #4a90e2;
+            border-radius: 0;
+            text-transform: none;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0;
+        }
+        
+        .legacy button[type="submit"]:hover {
+            background: #357abd;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .legacy .refresh-btn {
+            background: #ddd;
+            color: #333;
+            border: 1px solid #999;
+            border-radius: 0;
+        }
+        
+        .legacy table {
+            background: white;
+            border: 1px solid #999;
+        }
+        
+        .legacy th {
+            background: #ddd;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            border-bottom: 2px solid #999;
+        }
+        
+        .legacy td {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .legacy tr:hover td {
+            background: #ffffcc;
+        }
+        
+        .legacy .highlight {
+            color: #ff4757;
+            font-weight: bold;
+        }
+        
+        .panel:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-title .icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .legacy .panel-title .icon {
+            background: linear-gradient(135deg, #ff4757, #ff6348);
+        }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .badge.source {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--legacy-red);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+        
+        .tenant-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Forms */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        input, select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            font-size: 11px;
+        }
+        
+        /* Data Table */
+        .data-table {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        td {
+            padding: 12px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .highlight {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        /* New System - Full Width */
+        .new-system-panel {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(0, 212, 255, 0.1));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .new-system-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .new-system-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .modern-badge {
+            padding: 8px 16px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-purple);
+        }
+        
+        .new-system-form {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .tenant-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .tenant-a1 { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .tenant-a2 { background: rgba(255, 152, 107, 0.2); color: #ff986b; }
+        .tenant-b1 { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; }
+        .tenant-b2 { background: rgba(149, 175, 192, 0.2); color: #95afc0; }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Legacy Modernization Platform</h1>
+            <div class="subtitle">Unidirectional Sync + Write-Through Architecture</div>
+            <div class="sync-indicator">
+                <div class="dot"></div>
+                <span>LIVE SYNC ACTIVE</span>
+            </div>
+        </div>
+        
+        <!-- Legacy Instances Grid -->
+        <div class="grid">
+            <!-- Legacy A - Tenant 1 -->
+            <div class="panel legacy">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <div class="icon">🔴</div>
+                        <div>
+                            <div>Legacy System A</div>
+                            <div class="tenant-label">Instance: tenant_a1</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge source">SOURCE</span>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a1')">⟳</button>
+                    </div>
+                </div>
+                
+                <form onsubmit="createInLegacy(event, 'tenant_a1')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="a1_firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="a1_surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="a1_dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="a1_city" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data 1</label>
+                            <input type="text" id="a1_data1">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 2 → Sync</label>
+                            <input type="text" id="a1_data2" placeholder="Maps to new system">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 3</label>
+                            <input type="text" id="a1_data3">
+                        </div>
+                    </div>
+                    <button type="submit">Write to Legacy DB</button>
+                </form>
+                
+                <div class="data-table">
+                    <table id="table_a1">
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Legacy A - Tenant 2 -->
+            <div class="panel legacy">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <div class="icon">🔴</div>
+                        <div>
+                            <div>Legacy System A</div>
+                            <div class="tenant-label">Instance: tenant_a2</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge source">SOURCE</span>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_a2')">⟳</button>
+                    </div>
+                </div>
+                
+                <form onsubmit="createInLegacy(event, 'tenant_a2')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="a2_firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="a2_surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="a2_dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="a2_city" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data 1</label>
+                            <input type="text" id="a2_data1">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 2 → Sync</label>
+                            <input type="text" id="a2_data2" placeholder="Maps to new system">
+                        </div>
+                        <div class="form-group">
+                            <label>Data 3</label>
+                            <input type="text" id="a2_data3">
+                        </div>
+                    </div>
+                    <button type="submit">Write to Legacy DB</button>
+                </form>
+                
+                <div class="data-table">
+                    <table id="table_a2">
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data 1</th><th>Data 2</th><th>Data 3</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Legacy B - Tenant 1 -->
+            <div class="panel legacy">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <div class="icon">🔴</div>
+                        <div>
+                            <div>Legacy System B</div>
+                            <div class="tenant-label">Instance: tenant_b1</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge source">SOURCE</span>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b1')">⟳</button>
+                    </div>
+                </div>
+                
+                <form onsubmit="createInLegacy(event, 'tenant_b1')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="b1_firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="b1_surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="b1_dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="b1_city" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data A</label>
+                            <input type="text" id="b1_dataa">
+                        </div>
+                        <div class="form-group">
+                            <label>Data B</label>
+                            <input type="text" id="b1_datab">
+                        </div>
+                        <div class="form-group">
+                            <label>Data C → Sync</label>
+                            <input type="text" id="b1_datac" placeholder="Maps to new system">
+                        </div>
+                    </div>
+                    <button type="submit">Write to Legacy DB</button>
+                </form>
+                
+                <div class="data-table">
+                    <table id="table_b1">
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Legacy B - Tenant 2 -->
+            <div class="panel legacy">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <div class="icon">🔴</div>
+                        <div>
+                            <div>Legacy System B</div>
+                            <div class="tenant-label">Instance: tenant_b2</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge source">SOURCE</span>
+                        <button class="refresh-btn" onclick="loadLegacy('tenant_b2')">⟳</button>
+                    </div>
+                </div>
+                
+                <form onsubmit="createInLegacy(event, 'tenant_b2')">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="b2_firstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="b2_surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="b2_dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="b2_city" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data A</label>
+                            <input type="text" id="b2_dataa">
+                        </div>
+                        <div class="form-group">
+                            <label>Data B</label>
+                            <input type="text" id="b2_datab">
+                        </div>
+                        <div class="form-group">
+                            <label>Data C → Sync</label>
+                            <input type="text" id="b2_datac" placeholder="Maps to new system">
+                        </div>
+                    </div>
+                    <button type="submit">Write to Legacy DB</button>
+                </form>
+                
+                <div class="data-table">
+                    <table id="table_b2">
+                        <thead><tr><th>ID</th><th>Name</th><th>DOB</th><th>City</th><th>Data A</th><th>Data B</th><th>Data C</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visual Separator -->
+        <div style="margin: 40px 0; text-align: center; position: relative;">
+            <div style="height: 2px; background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-purple), transparent);"></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-dark); padding: 10px 30px; font-size: 12px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); border-radius: 20px;">
+                ⚡ MODERNIZATION LAYER ⚡
+            </div>
+        </div>
+        
+        <!-- New Multi-Tenant System -->
+        <div class="panel new-system-panel">
+            <div class="new-system-header">
+                <div class="new-system-title">⚡ New Multi-Tenant System</div>
+                <div>
+                    <span class="modern-badge">MODERN PLATFORM</span>
+                    <button class="refresh-btn" onclick="loadNewSystem()">⟳</button>
+                </div>
+            </div>
+            
+            <form onsubmit="createInNewSystem(event)" class="new-system-form">
+                <div class="form-group">
+                    <label>Tenant</label>
+                    <select id="new_tenant" required>
+                        <option value="tenant_a1">Tenant A1</option>
+                        <option value="tenant_a2">Tenant A2</option>
+                        <option value="tenant_b1">Tenant B1</option>
+                        <option value="tenant_b2">Tenant B2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" id="new_firstname" required>
+                </div>
+                <div class="form-group">
+                    <label>Surname</label>
+                    <input type="text" id="new_surname" required>
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="new_dob" required>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="new_city" required>
+                </div>
+                <div class="form-group">
+                    <label>Extra Field</label>
+                    <input type="text" id="new_extra" placeholder="Routes to legacy">
+                </div>
+                <button type="submit" style="grid-column: 1 / -1;">🚀 Write Through New API (Routes to Legacy DB)</button>
+            </form>
+            
+            <div class="data-table">
+                <table id="newSystemTable">
+                    <thead>
+                        <tr>
+                            <th>Tenant</th>
+                            <th>Legacy ID</th>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>City</th>
+                            <th>Extra Field (Mapped)</th>
+                            <th>Synced At</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        // Auto-refresh every 3 seconds
+        setInterval(() => {
+            loadLegacy('tenant_a1');
+            loadLegacy('tenant_a2');
+            loadLegacy('tenant_b1');
+            loadLegacy('tenant_b2');
+            loadNewSystem();
+        }, 3000);
+        
+        // Initial load
+        loadLegacy('tenant_a1');
+        loadLegacy('tenant_a2');
+        loadLegacy('tenant_b1');
+        loadLegacy('tenant_b2');
+        loadNewSystem();
+        
+        async function loadLegacy(tenantId) {
+            const response = await fetch(`${API_BASE}/legacy/${tenantId}/persons`);
+            const persons = await response.json();
+            
+            const tableId = `table_${tenantId.replace('tenant_', '')}`;
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            
+            tbody.innerHTML = persons.map(p => {
+                if (p.data_1 !== undefined) {
+                    // Legacy A
+                    return `
+                        <tr>
+                            <td>${p.id}</td>
+                            <td>${p.firstname} ${p.surname}</td>
+                            <td>${p.date_of_birth}</td>
+                            <td>${p.city}</td>
+                            <td>${p.data_1 || '-'}</td>
+                            <td class="highlight">${p.data_2 || '-'}</td>
+                            <td>${p.data_3 || '-'}</td>
+                        </tr>
+                    `;
+                } else {
+                    // Legacy B
+                    return `
+                        <tr>
+                            <td>${p.id}</td>
+                            <td>${p.firstname} ${p.surname}</td>
+                            <td>${p.date_of_birth}</td>
+                            <td>${p.city}</td>
+                            <td>${p.data_a || '-'}</td>
+                            <td>${p.data_b || '-'}</td>
+                            <td class="highlight">${p.data_c || '-'}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+        
+        async function loadNewSystem() {
+            const response = await fetch(`${API_BASE}/persons`);
+            const persons = await response.json();
+            
+            const tbody = document.querySelector('#newSystemTable tbody');
+            tbody.innerHTML = persons.map(p => `
+                <tr>
+                    <td><span class="tenant-badge tenant-${p.tenant_id.replace('tenant_', '')}">${p.tenant_id}</span></td>
+                    <td>${p.legacy_id}</td>
+                    <td>${p.firstname} ${p.surname}</td>
+                    <td>${p.date_of_birth}</td>
+                    <td>${p.city}</td>
+                    <td class="highlight">${p.extra_field || '-'}</td>
+                    <td style="font-size: 10px; color: #a0aec0;">${new Date(p.synced_at).toLocaleTimeString()}</td>
+                </tr>
+            `).join('');
+        }
+        
+        async function createInLegacy(event, tenantId) {
+            event.preventDefault();
+            const prefix = tenantId.replace('tenant_', '');
+            
+            const data = {
+                tenant_id: tenantId,
+                firstname: document.getElementById(`${prefix}_firstname`).value,
+                surname: document.getElementById(`${prefix}_surname`).value,
+                date_of_birth: document.getElementById(`${prefix}_dob`).value,
+                city: document.getElementById(`${prefix}_city`).value
+            };
+            
+            if (tenantId.startsWith('tenant_a')) {
+                data.data_1 = document.getElementById(`${prefix}_data1`).value;
+                data.extra_field = document.getElementById(`${prefix}_data2`).value;
+                data.data_3 = document.getElementById(`${prefix}_data3`).value;
+            } else {
+                data.data_a = document.getElementById(`${prefix}_dataa`).value;
+                data.data_b = document.getElementById(`${prefix}_datab`).value;
+                data.extra_field = document.getElementById(`${prefix}_datac`).value;
+            }
+            
+            await fetch(`${API_BASE}/persons`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            event.target.reset();
+            setTimeout(() => {
+                loadLegacy(tenantId);
+                loadNewSystem();
+            }, 2500);
+        }
+        
+        async function createInNewSystem(event) {
+            event.preventDefault();
+            
+            const data = {
+                tenant_id: document.getElementById('new_tenant').value,
+                firstname: document.getElementById('new_firstname').value,
+                surname: document.getElementById('new_surname').value,
+                date_of_birth: document.getElementById('new_dob').value,
+                city: document.getElementById('new_city').value,
+                extra_field: document.getElementById('new_extra').value
+            };
+            
+            await fetch(`${API_BASE}/persons`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            event.target.reset();
+            setTimeout(() => {
+                loadLegacy(data.tenant_id);
+                loadNewSystem();
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
