@@ -518,6 +518,86 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--accent-blue);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .edit-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .edit-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-blue);
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -828,14 +908,60 @@
                             <th>City</th>
                             <th>Extra Field (Mapped)</th>
                             <th>Synced At</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Edit Modal -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Record</h2>
+                    <button type="button" class="close-btn" onclick="closeEditModal()">&times;</button>
+                </div>
+                <form id="editForm" onsubmit="submitEdit(event)">
+                    <input type="hidden" id="editLegacyId">
+
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="form-group">
+                            <label>Tenant ID (Locked)</label>
+                            <input type="text" id="editTenantId" disabled style="opacity: 0.6; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="editFirstname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="editSurname" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="date" id="editDob" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="editCity" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Extra Field</label>
+                            <input type="text" id="editExtraField">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button type="submit" style="flex: 1;">Save Changes</button>
+                        <button type="button" onclick="closeEditModal()" style="flex: 1; background: rgba(255, 255, 255, 0.1);">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    
+
     <script>
         const API_BASE = 'http://localhost:5000/api';
         
@@ -907,6 +1033,7 @@
                     <td>${p.city}</td>
                     <td class="highlight">${p.extra_field || '-'}</td>
                     <td style="font-size: 10px; color: #a0aec0;">${new Date(p.synced_at).toLocaleTimeString()}</td>
+                    <td><button class="edit-btn" onclick="openEditModal('${p.tenant_id}', ${p.legacy_id})">Edit</button></td>
                 </tr>
             `).join('');
         }
@@ -970,6 +1097,71 @@
                 loadNewSystem();
             }, 2500);
         }
+
+        async function openEditModal(tenantId, legacyId) {
+            // Show modal
+            document.getElementById('editModal').style.display = 'flex';
+
+            // Fetch current record from new_system.db
+            const response = await fetch(`${API_BASE}/persons?tenant_id=${tenantId}`);
+            const persons = await response.json();
+            const person = persons.find(p => p.legacy_id === legacyId && p.tenant_id === tenantId);
+
+            if (!person) {
+                alert('Record not found');
+                closeEditModal();
+                return;
+            }
+
+            // Populate form fields
+            document.getElementById('editTenantId').value = person.tenant_id;
+            document.getElementById('editLegacyId').value = person.legacy_id;
+            document.getElementById('editFirstname').value = person.firstname;
+            document.getElementById('editSurname').value = person.surname;
+            document.getElementById('editDob').value = person.date_of_birth;
+            document.getElementById('editCity').value = person.city;
+            document.getElementById('editExtraField').value = person.extra_field || '';
+        }
+
+        async function submitEdit(event) {
+            event.preventDefault();
+
+            const data = {
+                tenant_id: document.getElementById('editTenantId').value,
+                legacy_id: parseInt(document.getElementById('editLegacyId').value),
+                firstname: document.getElementById('editFirstname').value,
+                surname: document.getElementById('editSurname').value,
+                date_of_birth: document.getElementById('editDob').value,
+                city: document.getElementById('editCity').value,
+                extra_field: document.getElementById('editExtraField').value
+            };
+
+            const response = await fetch(`${API_BASE}/persons`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                closeEditModal();
+                // Wait for CDC sync (2.5 seconds)
+                setTimeout(() => loadNewSystem(), 2500);
+            } else {
+                const error = await response.json();
+                alert('Update failed: ' + (error.error || 'Please try again'));
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Close modal on overlay click
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') {
+                closeEditModal();
+            }
+        });
     </script>
 </body>
 </html>

@@ -62,6 +62,50 @@ class WriteThrough:
         conn.close()
         return legacy_id
 
+    @staticmethod
+    def update_to_legacy(tenant_id, legacy_id, data):
+        """Update existing record in the correct legacy instance based on tenant_id"""
+        if tenant_id not in TENANT_CONFIG:
+            raise ValueError(f"Unknown tenant: {tenant_id}")
+
+        config = TENANT_CONFIG[tenant_id]
+        conn = sqlite3.connect(config['db'])
+        cursor = conn.cursor()
+
+        if config['type'] == 'legacy_a':
+            # Legacy A schema
+            cursor.execute('''
+            UPDATE person
+            SET firstname=?, surname=?, date_of_birth=?, city=?, data_2=?
+            WHERE id=?
+            ''', (
+                data['firstname'],
+                data['surname'],
+                data['date_of_birth'],
+                data['city'],
+                data.get('extra_field', ''),
+                legacy_id
+            ))
+        else:
+            # Legacy B schema
+            cursor.execute('''
+            UPDATE person
+            SET firstname=?, surname=?, date_of_birth=?, city=?, data_c=?
+            WHERE id=?
+            ''', (
+                data['firstname'],
+                data['surname'],
+                data['date_of_birth'],
+                data['city'],
+                data.get('extra_field', ''),
+                legacy_id
+            ))
+
+        conn.commit()
+        rows_updated = cursor.rowcount
+        conn.close()
+        return rows_updated
+
 @app.route('/api/persons', methods=['GET'])
 def get_persons():
     """Read from new system database (local reads)"""
@@ -113,6 +157,34 @@ def create_person():
             'note': 'CDC will sync to new system shortly'
         }), 201
     
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/persons', methods=['PUT'])
+def update_person():
+    """Update existing person through write-through to legacy system"""
+    data = request.json
+    tenant_id = data.get('tenant_id')
+    legacy_id = data.get('legacy_id')
+
+    if not tenant_id:
+        return jsonify({'error': 'tenant_id required'}), 400
+    if not legacy_id:
+        return jsonify({'error': 'legacy_id required'}), 400
+
+    try:
+        rows_updated = WriteThrough.update_to_legacy(tenant_id, legacy_id, data)
+
+        if rows_updated == 0:
+            return jsonify({'error': 'Record not found'}), 404
+
+        return jsonify({
+            'message': 'Person updated in legacy system',
+            'tenant_id': tenant_id,
+            'legacy_id': legacy_id,
+            'note': 'CDC will sync to new system shortly'
+        }), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
