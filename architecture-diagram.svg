@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1000" style="background: #0a0e27;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="legacyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="kafkaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="newSystemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.1" />
+    </linearGradient>
+
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#00d4ff" />
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ff6b6b" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#fff" text-anchor="middle">
+    Legacy Modernization Architecture
+  </text>
+  <text x="700" y="55" font-family="Arial, sans-serif" font-size="14" fill="#a0aec0" text-anchor="middle">
+    PostgreSQL + Debezium + Kafka + dbt + Docker Compose
+  </text>
+
+  <!-- Legend -->
+  <g id="legend">
+    <rect x="20" y="80" width="200" height="110" rx="5" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <text x="30" y="100" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fff">Legend</text>
+
+    <line x1="30" y1="115" x2="70" y2="115" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="75" y="120" font-family="Arial, sans-serif" font-size="11" fill="#a0aec0">CDC Flow (Legacy → New)</text>
+
+    <line x1="30" y1="135" x2="70" y2="135" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrowhead-red)"/>
+    <text x="75" y="140" font-family="Arial, sans-serif" font-size="11" fill="#a0aec0">Write-Through (New → Legacy)</text>
+
+    <line x1="30" y1="155" x2="70" y2="155" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowhead-purple)"/>
+    <text x="75" y="160" font-family="Arial, sans-serif" font-size="11" fill="#a0aec0">API/UI Communication</text>
+
+    <rect x="30" y="170" width="15" height="15" fill="url(#legacyGrad)" stroke="#ff6b6b" stroke-width="1"/>
+    <text x="50" y="182" font-family="Arial, sans-serif" font-size="11" fill="#a0aec0">Legacy System</text>
+  </g>
+
+  <!-- Layer 1: Legacy Databases -->
+  <g id="legacy-layer">
+    <text x="150" y="240" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ff6b6b">Legacy Systems (Source of Truth)</text>
+
+    <!-- Legacy A1 -->
+    <rect x="50" y="260" width="140" height="100" rx="5" fill="url(#legacyGrad)" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="120" y="285" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">PostgreSQL</text>
+    <text x="120" y="305" font-family="Arial, sans-serif" font-size="12" fill="#ff6b6b" text-anchor="middle">Legacy A - Tenant 1</text>
+    <text x="120" y="325" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">tenant_a1</text>
+    <text x="120" y="340" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-style="italic">data_1, data_2, data_3</text>
+
+    <!-- Legacy A2 -->
+    <rect x="210" y="260" width="140" height="100" rx="5" fill="url(#legacyGrad)" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="280" y="285" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">PostgreSQL</text>
+    <text x="280" y="305" font-family="Arial, sans-serif" font-size="12" fill="#ff6b6b" text-anchor="middle">Legacy A - Tenant 2</text>
+    <text x="280" y="325" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">tenant_a2</text>
+    <text x="280" y="340" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-style="italic">data_1, data_2, data_3</text>
+
+    <!-- Legacy B1 -->
+    <rect x="370" y="260" width="140" height="100" rx="5" fill="url(#legacyGrad)" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="440" y="285" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">PostgreSQL</text>
+    <text x="440" y="305" font-family="Arial, sans-serif" font-size="12" fill="#ff6b6b" text-anchor="middle">Legacy B - Tenant 1</text>
+    <text x="440" y="325" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">tenant_b1</text>
+    <text x="440" y="340" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-style="italic">data_a, data_b, data_c</text>
+
+    <!-- Legacy B2 -->
+    <rect x="530" y="260" width="140" height="100" rx="5" fill="url(#legacyGrad)" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="600" y="285" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">PostgreSQL</text>
+    <text x="600" y="305" font-family="Arial, sans-serif" font-size="12" fill="#ff6b6b" text-anchor="middle">Legacy B - Tenant 2</text>
+    <text x="600" y="325" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">tenant_b2</text>
+    <text x="600" y="340" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-style="italic">data_a, data_b, data_c</text>
+  </g>
+
+  <!-- CDC Arrows from Legacy to Debezium -->
+  <line x1="120" y1="360" x2="120" y2="430" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)" stroke-dasharray="5,5"/>
+  <line x1="280" y1="360" x2="280" y2="430" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)" stroke-dasharray="5,5"/>
+  <line x1="440" y1="360" x2="440" y2="430" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)" stroke-dasharray="5,5"/>
+  <line x1="600" y1="360" x2="600" y2="430" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)" stroke-dasharray="5,5"/>
+
+  <text x="130" y="395" font-family="Arial, sans-serif" font-size="9" fill="#00d4ff">WAL</text>
+
+  <!-- Layer 2: Debezium -->
+  <g id="debezium-layer">
+    <rect x="50" y="430" width="620" height="80" rx="5" fill="url(#kafkaGrad)" stroke="#00d4ff" stroke-width="2"/>
+    <text x="360" y="455" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Debezium Connect</text>
+    <text x="360" y="475" font-family="Arial, sans-serif" font-size="11" fill="#00d4ff" text-anchor="middle">4 CDC Connectors (PostgreSQL WAL Reader)</text>
+    <text x="360" y="492" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">legacy-a1-connector | legacy-a2-connector | legacy-b1-connector | legacy-b2-connector</text>
+  </g>
+
+  <!-- Arrow from Debezium to Kafka -->
+  <line x1="360" y1="510" x2="360" y2="570" stroke="#00d4ff" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="370" y="545" font-family="Arial, sans-serif" font-size="10" fill="#00d4ff">JSON Events</text>
+
+  <!-- Layer 3: Kafka -->
+  <g id="kafka-layer">
+    <rect x="250" y="570" width="220" height="100" rx="5" fill="url(#kafkaGrad)" stroke="#00d4ff" stroke-width="2"/>
+    <text x="360" y="595" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Kafka Broker</text>
+    <text x="360" y="615" font-family="Arial, sans-serif" font-size="11" fill="#00d4ff" text-anchor="middle">Event Streaming</text>
+    <text x="360" y="633" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Topics:</text>
+    <text x="360" y="647" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">legacy_a1.public.person</text>
+    <text x="360" y="658" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">legacy_a2/b1/b2.public.person</text>
+  </g>
+
+  <!-- Zookeeper (smaller, to the side) -->
+  <rect x="490" y="585" width="100" height="70" rx="5" fill="rgba(255,255,255,0.05)" stroke="#00d4ff" stroke-width="1"/>
+  <text x="540" y="610" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Zookeeper</text>
+  <text x="540" y="627" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Kafka</text>
+  <text x="540" y="640" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Coordinator</text>
+  <line x1="470" y1="620" x2="490" y2="620" stroke="#00d4ff" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Arrow from Kafka to Consumer -->
+  <line x1="360" y1="670" x2="360" y2="730" stroke="#00d4ff" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <text x="370" y="705" font-family="Arial, sans-serif" font-size="10" fill="#00d4ff">Poll Messages</text>
+
+  <!-- Layer 4: CDC Consumer + dbt -->
+  <g id="consumer-layer">
+    <rect x="250" y="730" width="220" height="100" rx="5" fill="url(#kafkaGrad)" stroke="#00d4ff" stroke-width="2"/>
+    <text x="360" y="755" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">CDC Consumer</text>
+    <text x="360" y="775" font-family="Arial, sans-serif" font-size="11" fill="#00d4ff" text-anchor="middle">Python + dbt</text>
+    <text x="360" y="792" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">1. Consume Kafka events</text>
+    <text x="360" y="805" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">2. Stage to person_staging</text>
+    <text x="360" y="818" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">3. Run dbt (every 5s)</text>
+  </g>
+
+  <!-- Arrow from Consumer to New System -->
+  <line x1="470" y1="780" x2="730" y2="780" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="550" y="775" font-family="Arial, sans-serif" font-size="9" fill="#00d4ff">dbt Transform</text>
+  <text x="550" y="788" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0">staging → person</text>
+
+  <!-- Layer 5: New System Database -->
+  <g id="new-system-layer">
+    <rect x="730" y="710" width="200" height="140" rx="5" fill="url(#newSystemGrad)" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="830" y="735" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">PostgreSQL</text>
+    <text x="830" y="755" font-family="Arial, sans-serif" font-size="12" fill="#8b5cf6" text-anchor="middle">New System</text>
+    <text x="830" y="775" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">Multi-Tenant Database</text>
+    <rect x="745" y="785" width="170" height="55" rx="3" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <text x="830" y="802" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-weight="bold">Tables:</text>
+    <text x="830" y="815" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• person_staging (raw CDC)</text>
+    <text x="830" y="827" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• person (unified schema)</text>
+    <text x="830" y="839" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• tenant_mapping</text>
+  </g>
+
+  <!-- Layer 6: API Service -->
+  <g id="api-layer">
+    <rect x="950" y="710" width="180" height="140" rx="5" fill="url(#newSystemGrad)" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1040" y="735" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">API Service</text>
+    <text x="1040" y="755" font-family="Arial, sans-serif" font-size="11" fill="#8b5cf6" text-anchor="middle">Flask REST API</text>
+    <rect x="960" y="765" width="160" height="75" rx="3" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <text x="1040" y="782" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-weight="bold">Endpoints:</text>
+    <text x="1040" y="797" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">GET /api/persons</text>
+    <text x="1040" y="809" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">POST /api/persons</text>
+    <text x="1040" y="821" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">PUT /api/persons</text>
+    <text x="1040" y="833" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">GET /api/legacy/{id}/...</text>
+  </g>
+
+  <!-- API to New System connection -->
+  <line x1="930" y1="780" x2="950" y2="780" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="935" y="775" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">Read</text>
+
+  <!-- Layer 7: Web UI -->
+  <g id="web-layer">
+    <rect x="1150" y="710" width="180" height="140" rx="5" fill="url(#newSystemGrad)" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="1240" y="735" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Web UI</text>
+    <text x="1240" y="755" font-family="Arial, sans-serif" font-size="11" fill="#8b5cf6" text-anchor="middle">Nginx + HTML/JS</text>
+    <rect x="1160" y="765" width="160" height="75" rx="3" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <text x="1240" y="782" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle" font-weight="bold">Features:</text>
+    <text x="1240" y="797" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• 4 Legacy panels</text>
+    <text x="1240" y="809" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• 1 Modern system panel</text>
+    <text x="1240" y="821" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• Edit modals</text>
+    <text x="1240" y="833" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0" text-anchor="middle">• Auto-refresh (3s)</text>
+  </g>
+
+  <!-- Web to API connection -->
+  <line x1="1130" y1="780" x2="1150" y2="780" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowhead-purple)"/>
+  <text x="1135" y="775" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">HTTP</text>
+
+  <!-- Write-Through Flow (curved path from API back to Legacy) -->
+  <path d="M 1040 710 Q 1040 500, 700 380" stroke="#ff6b6b" stroke-width="2" fill="none" marker-end="url(#arrowhead-red)" stroke-dasharray="5,5"/>
+  <text x="920" y="520" font-family="Arial, sans-serif" font-size="10" fill="#ff6b6b">Write-Through</text>
+  <text x="920" y="535" font-family="Arial, sans-serif" font-size="8" fill="#a0aec0">(POST/PUT → Legacy)</text>
+
+  <!-- Schema Mapping Box -->
+  <g id="schema-mapping">
+    <rect x="50" y="880" width="300" height="100" rx="5" fill="rgba(139,92,246,0.1)" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="200" y="905" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">Schema Mapping (dbt)</text>
+    <text x="200" y="925" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">Legacy A: data_2 → extra_field</text>
+    <text x="200" y="943" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">Legacy B: data_c → extra_field</text>
+    <text x="200" y="961" font-family="Arial, sans-serif" font-size="9" fill="#8b5cf6" text-anchor="middle">Incremental merge preserves modernized_only</text>
+  </g>
+
+  <!-- Key Features Box -->
+  <g id="key-features">
+    <rect x="370" y="880" width="300" height="100" rx="5" fill="rgba(0,212,255,0.1)" stroke="#00d4ff" stroke-width="2"/>
+    <text x="520" y="905" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">Key Features</text>
+    <text x="520" y="925" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">✓ Log-based CDC (PostgreSQL WAL)</text>
+    <text x="520" y="943" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">✓ Event streaming (Kafka)</text>
+    <text x="520" y="961" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">✓ ELT transformation (dbt)</text>
+  </g>
+
+  <!-- Data Flow Summary Box -->
+  <g id="data-flow">
+    <rect x="690" y="880" width="480" height="100" rx="5" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="930" y="905" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">Data Flow Summary</text>
+    <text x="930" y="925" font-family="Arial, sans-serif" font-size="9" fill="#00d4ff" text-anchor="middle">CDC Sync: Legacy → Debezium → Kafka → Consumer → dbt → New System (~7s)</text>
+    <text x="930" y="943" font-family="Arial, sans-serif" font-size="9" fill="#ff6b6b" text-anchor="middle">Write-Through: UI → API → Legacy → [CDC Sync Back] (~7s round-trip)</text>
+    <text x="930" y="961" font-family="Arial, sans-serif" font-size="9" fill="#8b5cf6" text-anchor="middle">Local Reads: UI → API → New System (instant)</text>
+  </g>
+
+  <!-- Container Count -->
+  <text x="1200" y="920" font-family="Arial, sans-serif" font-size="11" fill="#a0aec0" text-anchor="end">11 Docker Containers</text>
+  <text x="1200" y="935" font-family="Arial, sans-serif" font-size="9" fill="#666" text-anchor="end">orchestrated via docker-compose</text>
+</svg>

@@ -1,0 +1,236 @@
+version: '3.8'
+
+services:
+  # Zookeeper - Required for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - modernisation
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - modernisation
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Legacy A - Tenant 1
+  postgres-legacy-a1:
+    image: postgres:15
+    hostname: postgres-legacy-a1
+    container_name: postgres-legacy-a1
+    environment:
+      POSTGRES_USER: legacyuser
+      POSTGRES_PASSWORD: legacypass
+      POSTGRES_DB: legacy_a1
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    volumes:
+      - ./postgres-init/legacy_a1.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - modernisation
+
+  # Legacy A - Tenant 2
+  postgres-legacy-a2:
+    image: postgres:15
+    hostname: postgres-legacy-a2
+    container_name: postgres-legacy-a2
+    environment:
+      POSTGRES_USER: legacyuser
+      POSTGRES_PASSWORD: legacypass
+      POSTGRES_DB: legacy_a2
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    volumes:
+      - ./postgres-init/legacy_a2.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - modernisation
+
+  # Legacy B - Tenant 1
+  postgres-legacy-b1:
+    image: postgres:15
+    hostname: postgres-legacy-b1
+    container_name: postgres-legacy-b1
+    environment:
+      POSTGRES_USER: legacyuser
+      POSTGRES_PASSWORD: legacypass
+      POSTGRES_DB: legacy_b1
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    volumes:
+      - ./postgres-init/legacy_b1.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - modernisation
+
+  # Legacy B - Tenant 2
+  postgres-legacy-b2:
+    image: postgres:15
+    hostname: postgres-legacy-b2
+    container_name: postgres-legacy-b2
+    environment:
+      POSTGRES_USER: legacyuser
+      POSTGRES_PASSWORD: legacypass
+      POSTGRES_DB: legacy_b2
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    volumes:
+      - ./postgres-init/legacy_b2.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - modernisation
+
+  # New System Database
+  postgres-new-system:
+    image: postgres:15
+    hostname: postgres-new-system
+    container_name: postgres-new-system
+    environment:
+      POSTGRES_USER: newuser
+      POSTGRES_PASSWORD: newpass
+      POSTGRES_DB: new_system
+    volumes:
+      - ./postgres-init/new_system.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - modernisation
+
+  # Debezium Connect
+  debezium:
+    image: debezium/connect:2.4
+    hostname: debezium
+    container_name: debezium
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: debezium_configs
+      OFFSET_STORAGE_TOPIC: debezium_offsets
+      STATUS_STORAGE_TOPIC: debezium_statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+    ports:
+      - "8083:8083"
+    networks:
+      - modernisation
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # CDC Consumer + dbt transformer
+  cdc-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: cdc-consumer
+    depends_on:
+      debezium:
+        condition: service_healthy
+      postgres-new-system:
+        condition: service_started
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NEW_SYSTEM_DB_HOST: postgres-new-system
+      NEW_SYSTEM_DB_PORT: 5432
+      NEW_SYSTEM_DB_NAME: new_system
+      NEW_SYSTEM_DB_USER: newuser
+      NEW_SYSTEM_DB_PASS: newpass
+    volumes:
+      - ./cdc-consumer:/app
+      - ./dbt-project:/dbt
+    networks:
+      - modernisation
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api
+    depends_on:
+      - postgres-legacy-a1
+      - postgres-legacy-a2
+      - postgres-legacy-b1
+      - postgres-legacy-b2
+      - postgres-new-system
+    environment:
+      NEW_SYSTEM_DB_HOST: postgres-new-system
+      NEW_SYSTEM_DB_PORT: 5432
+      NEW_SYSTEM_DB_NAME: new_system
+      NEW_SYSTEM_DB_USER: newuser
+      NEW_SYSTEM_DB_PASS: newpass
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./api:/app
+    networks:
+      - modernisation
+
+  # Web UI
+  web:
+    image: nginx:alpine
+    container_name: web
+    ports:
+      - "8000:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html
+    networks:
+      - modernisation
+
+  # Init container to setup Debezium connectors
+  debezium-init:
+    image: curlimages/curl:latest
+    container_name: debezium-init
+    depends_on:
+      debezium:
+        condition: service_healthy
+      postgres-legacy-a1:
+        condition: service_started
+      postgres-legacy-a2:
+        condition: service_started
+      postgres-legacy-b1:
+        condition: service_started
+      postgres-legacy-b2:
+        condition: service_started
+    volumes:
+      - ./debezium-connectors:/connectors
+      - ./scripts/register-connectors.sh:/register-connectors.sh
+    command: sh /register-connectors.sh
+    networks:
+      - modernisation
+
+networks:
+  modernisation:
+    driver: bridge

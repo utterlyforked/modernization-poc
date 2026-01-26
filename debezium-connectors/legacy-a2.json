@@ -1,0 +1,20 @@
+{
+  "name": "legacy-a2-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres-legacy-a2",
+    "database.port": "5432",
+    "database.user": "legacyuser",
+    "database.password": "legacypass",
+    "database.dbname": "legacy_a2",
+    "database.server.name": "legacy_a2",
+    "table.include.list": "public.person",
+    "plugin.name": "pgoutput",
+    "publication.autocreate.mode": "filtered",
+    "topic.prefix": "legacy_a2",
+    "transforms": "addTenant",
+    "transforms.addTenant.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.addTenant.static.field": "tenant_id",
+    "transforms.addTenant.static.value": "tenant_a2"
+  }
+}

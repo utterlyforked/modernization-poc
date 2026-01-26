@@ -1085,7 +1085,19 @@
 
     <script>
         const API_BASE = 'http://localhost:5000/api';
-        
+
+        // Helper function to convert date to YYYY-MM-DD format for date inputs
+        function toDateInputFormat(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '';
+                return date.toISOString().split('T')[0];
+            } catch (e) {
+                return '';
+            }
+        }
+
         // Auto-refresh every 3 seconds
         setInterval(() => {
             loadLegacy('tenant_a1');
@@ -1165,31 +1177,30 @@
         async function createInLegacy(event, tenantId) {
             event.preventDefault();
             const prefix = tenantId.replace('tenant_', '');
-            
+
             const data = {
-                tenant_id: tenantId,
                 firstname: document.getElementById(`${prefix}_firstname`).value,
                 surname: document.getElementById(`${prefix}_surname`).value,
                 date_of_birth: document.getElementById(`${prefix}_dob`).value,
                 city: document.getElementById(`${prefix}_city`).value
             };
-            
+
             if (tenantId.startsWith('tenant_a')) {
                 data.data_1 = document.getElementById(`${prefix}_data1`).value;
-                data.extra_field = document.getElementById(`${prefix}_data2`).value;
+                data.data_2 = document.getElementById(`${prefix}_data2`).value;
                 data.data_3 = document.getElementById(`${prefix}_data3`).value;
             } else {
                 data.data_a = document.getElementById(`${prefix}_dataa`).value;
                 data.data_b = document.getElementById(`${prefix}_datab`).value;
-                data.extra_field = document.getElementById(`${prefix}_datac`).value;
+                data.data_c = document.getElementById(`${prefix}_datac`).value;
             }
-            
-            await fetch(`${API_BASE}/persons`, {
+
+            await fetch(`${API_BASE}/legacy/${tenantId}/persons`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             event.target.reset();
             setTimeout(() => {
                 loadLegacy(tenantId);
@@ -1243,10 +1254,10 @@
             document.getElementById('editLegacyId').value = person.legacy_id;
             document.getElementById('editFirstname').value = person.firstname;
             document.getElementById('editSurname').value = person.surname;
-            document.getElementById('editDob').value = person.date_of_birth;
+            document.getElementById('editDob').value = toDateInputFormat(person.date_of_birth);
             document.getElementById('editCity').value = person.city;
             document.getElementById('editExtraField').value = person.extra_field || '';
-            document.getElementById('editModernizedOnly').value = person.modernized_only || '';
+            document.getElementById('editModernizedOnly').value = toDateInputFormat(person.modernized_only);
         }
 
         async function submitEdit(event) {
@@ -1294,7 +1305,7 @@
             document.getElementById('editLegacyARecordId').value = recordId;
             document.getElementById('editLegacyAFirstname').value = person.firstname;
             document.getElementById('editLegacyASurname').value = person.surname;
-            document.getElementById('editLegacyADob').value = person.date_of_birth;
+            document.getElementById('editLegacyADob').value = toDateInputFormat(person.date_of_birth);
             document.getElementById('editLegacyACity').value = person.city;
             document.getElementById('editLegacyAData1').value = person.data_1 || '';
             document.getElementById('editLegacyAData2').value = person.data_2 || '';
@@ -1349,7 +1360,7 @@
             document.getElementById('editLegacyBRecordId').value = recordId;
             document.getElementById('editLegacyBFirstname').value = person.firstname;
             document.getElementById('editLegacyBSurname').value = person.surname;
-            document.getElementById('editLegacyBDob').value = person.date_of_birth;
+            document.getElementById('editLegacyBDob').value = toDateInputFormat(person.date_of_birth);
             document.getElementById('editLegacyBCity').value = person.city;
             document.getElementById('editLegacyBDataA').value = person.data_a || '';
             document.getElementById('editLegacyBDataB').value = person.data_b || '';
