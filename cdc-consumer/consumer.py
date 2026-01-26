@@ -159,12 +159,12 @@ class CDCConsumer:
         print("Starting CDC consumer...", flush=True)
         staged_count = 0
         last_dbt_run = time.time()
-        DBT_INTERVAL = 5  # Run dbt every 5 seconds
+        DBT_INTERVAL = 1  # Run dbt every 1 second (reduced for demo responsiveness)
         poll_count = 0
 
         try:
             while True:
-                msg = self.consumer.poll(timeout=1.0)
+                msg = self.consumer.poll(timeout=0.5)
                 poll_count += 1
 
                 if poll_count % 30 == 0:  # Log every 30 seconds

@@ -216,9 +216,9 @@
   <g id="data-flow">
     <rect x="690" y="880" width="480" height="100" rx="5" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="2"/>
     <text x="930" y="905" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">Data Flow Summary</text>
-    <text x="930" y="925" font-family="Arial, sans-serif" font-size="9" fill="#00d4ff" text-anchor="middle">CDC Sync: Legacy → Debezium → Kafka → Consumer → dbt → New System (~7s)</text>
-    <text x="930" y="943" font-family="Arial, sans-serif" font-size="9" fill="#ff6b6b" text-anchor="middle">Write-Through: UI → API → Legacy → [CDC Sync Back] (~7s round-trip)</text>
-    <text x="930" y="961" font-family="Arial, sans-serif" font-size="9" fill="#8b5cf6" text-anchor="middle">Local Reads: UI → API → New System (instant)</text>
+    <text x="930" y="925" font-family="Arial, sans-serif" font-size="9" fill="#00d4ff" text-anchor="middle">CDC Sync: Legacy → Debezium → Kafka → Consumer → dbt → New System</text>
+    <text x="930" y="943" font-family="Arial, sans-serif" font-size="9" fill="#ff6b6b" text-anchor="middle">Write-Through: UI → API → Legacy → [CDC Sync Back]</text>
+    <text x="930" y="961" font-family="Arial, sans-serif" font-size="9" fill="#8b5cf6" text-anchor="middle">Local Reads: UI → API → New System</text>
   </g>
 
   <!-- Container Count -->

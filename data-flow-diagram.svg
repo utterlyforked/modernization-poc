@@ -83,10 +83,6 @@
       <text x="530" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">table</text>
       <text x="530" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">New system</text>
     </g>
-
-    <text x="900" y="290" font-family="Arial, sans-serif" font-size="12" fill="#a0aec0" font-style="italic">
-      ⏱ Total time: ~5-7 seconds
-    </text>
   </g>
 
   <!-- Flow 2: Write-Through Flow -->
@@ -174,9 +170,6 @@
       during CDC merge
     </text>
 
-    <text x="900" y="550" font-family="Arial, sans-serif" font-size="12" fill="#a0aec0" font-style="italic">
-      ⏱ Total round-trip: ~7-10 seconds
-    </text>
   </g>
 
   <!-- Flow 3: Read Flow -->
@@ -222,9 +215,6 @@
       <text x="330" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Display</text>
     </g>
 
-    <text x="900" y="730" font-family="Arial, sans-serif" font-size="12" fill="#a0aec0" font-style="italic">
-      ⏱ Near-instant (&lt;100ms)
-    </text>
   </g>
 
   <!-- Footer -->
