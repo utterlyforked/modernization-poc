@@ -7,7 +7,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-export HOST_UID=$(id -u) HOST_GID=$(id -g)
+export HOST_UID=${SUDO_UID:-$(id -u)} HOST_GID=${SUDO_GID:-$(id -g)}  # under sudo, own test-results as the invoking user
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.e2e-test.yml"
 
 mkdir -p test-results
