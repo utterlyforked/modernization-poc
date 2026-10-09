@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+  <!-- Define styles -->
+  <defs>
+    <style>
+      .legacy-box { fill: #FFE5E5; stroke: #CC0000; stroke-width: 3; }
+      .new-box { fill: #E5F5FF; stroke: #0066CC; stroke-width: 3; }
+      .infra-box { fill: #F0F0F0; stroke: #666666; stroke-width: 2; }
+      .adapter-box { fill: #FFF9E5; stroke: #FF9900; stroke-width: 2; }
+      .title-text { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; }
+      .label-text { font-family: Arial, sans-serif; font-size: 14px; }
+      .small-text { font-family: Arial, sans-serif; font-size: 12px; }
+      .flow-arrow { stroke-width: 3; fill: none; }
+      .sync-flow { stroke: #009900; }
+      .write-flow { stroke: #CC00CC; }
+      .read-flow { stroke: #0066CC; }
+      .legend-text { font-family: Arial, sans-serif; font-size: 13px; }
+    </style>
+    
+    <!-- Arrow markers -->
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#009900" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#CC00CC" />
+    </marker>
+    <marker id="arrowhead-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#0066CC" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="800" y="35" class="title-text" text-anchor="middle" font-size="22">Legacy Modernization Architecture</text>
+  <text x="800" y="60" class="small-text" text-anchor="middle" fill="#666">(Unidirectional Sync + Write-Through Pattern)</text>
+  
+  <!-- ========== LEGACY SYSTEMS (Left Column) ========== -->
+  
+  <!-- Legacy System A -->
+  <g id="legacy-a">
+    <rect x="50" y="120" width="280" height="180" class="legacy-box" rx="5"/>
+    <text x="190" y="150" class="title-text" text-anchor="middle" fill="#CC0000">Legacy System A</text>
+    <text x="190" y="170" class="small-text" text-anchor="middle" fill="#666">(Source of Truth)</text>
+    
+    <!-- Legacy App A -->
+    <rect x="70" y="185" width="240" height="45" fill="#FFB3B3" stroke="#990000" stroke-width="2" rx="3"/>
+    <text x="190" y="212" class="label-text" text-anchor="middle">Legacy Application A</text>
+    
+    <!-- Legacy DB A -->
+    <rect x="70" y="240" width="240" height="45" fill="#FFB3B3" stroke="#990000" stroke-width="2" rx="3"/>
+    <text x="190" y="262" class="label-text" text-anchor="middle">SQL Database A</text>
+    <text x="190" y="278" class="small-text" text-anchor="middle" fill="#666">CDC Triggers</text>
+  </g>
+  
+  <!-- Legacy System B -->
+  <g id="legacy-b">
+    <rect x="50" y="370" width="280" height="180" class="legacy-box" rx="5"/>
+    <text x="190" y="400" class="title-text" text-anchor="middle" fill="#CC0000">Legacy System B</text>
+    <text x="190" y="420" class="small-text" text-anchor="middle" fill="#666">(Source of Truth)</text>
+    
+    <!-- Legacy App B -->
+    <rect x="70" y="435" width="240" height="45" fill="#FFB3B3" stroke="#990000" stroke-width="2" rx="3"/>
+    <text x="190" y="462" class="label-text" text-anchor="middle">Legacy Application B</text>
+    
+    <!-- Legacy DB B -->
+    <rect x="70" y="490" width="240" height="45" fill="#FFB3B3" stroke="#990000" stroke-width="2" rx="3"/>
+    <text x="190" y="512" class="label-text" text-anchor="middle">SQL Database B</text>
+    <text x="190" y="528" class="small-text" text-anchor="middle" fill="#666">CDC Triggers</text>
+  </g>
+  
+  <!-- ========== MESSAGE QUEUE (Top Center) ========== -->
+  
+  <g id="message-queue">
+    <rect x="710" y="80" width="200" height="120" class="infra-box" rx="5"/>
+    <text x="810" y="105" class="title-text" text-anchor="middle" fill="#333">Message Queue</text>
+    <text x="810" y="125" class="small-text" text-anchor="middle" fill="#666">(Decoupled Sync)</text>
+    
+    <rect x="730" y="140" width="160" height="25" fill="#CCCCCC" stroke="#666" rx="3"/>
+    <text x="810" y="157" class="small-text" text-anchor="middle">Sync Events</text>
+    
+    <rect x="730" y="170" width="160" height="25" fill="#CCCCCC" stroke="#666" rx="3"/>
+    <text x="810" y="187" class="small-text" text-anchor="middle">Change Events</text>
+  </g>
+  
+  <!-- ========== SYNC/MAPPING LAYER (Center) ========== -->
+  
+  <g id="sync-layer">
+    <rect x="710" y="240" width="200" height="150" class="adapter-box" rx="5"/>
+    <text x="810" y="265" class="title-text" text-anchor="middle" fill="#FF9900">Sync/Mapping Layer</text>
+    
+    <!-- Adapter A -->
+    <rect x="730" y="280" width="160" height="38" fill="#FFEB99" stroke="#CC7A00" stroke-width="1.5" rx="3"/>
+    <text x="810" y="303" class="label-text" text-anchor="middle">Legacy A Adapter</text>
+    
+    <!-- Adapter B -->
+    <rect x="730" y="325" width="160" height="38" fill="#FFEB99" stroke="#CC7A00" stroke-width="1.5" rx="3"/>
+    <text x="810" y="348" class="label-text" text-anchor="middle">Legacy B Adapter</text>
+    
+    <text x="810" y="378" class="small-text" text-anchor="middle" fill="#666">Maps legacy schemas</text>
+  </g>
+  
+  <!-- ========== WRITE-THROUGH LAYER (Bottom Center) ========== -->
+  
+  <g id="write-layer">
+    <rect x="710" y="420" width="200" height="150" class="adapter-box" rx="5"/>
+    <text x="810" y="445" class="title-text" text-anchor="middle" fill="#FF9900">Write-Through Layer</text>
+    
+    <!-- Write Handler A -->
+    <rect x="730" y="460" width="160" height="38" fill="#FFEB99" stroke="#CC7A00" stroke-width="1.5" rx="3"/>
+    <text x="810" y="483" class="label-text" text-anchor="middle">Legacy A Writer</text>
+    
+    <!-- Write Handler B -->
+    <rect x="730" y="505" width="160" height="38" fill="#FFEB99" stroke="#CC7A00" stroke-width="1.5" rx="3"/>
+    <text x="810" y="528" class="label-text" text-anchor="middle">Legacy B Writer</text>
+    
+    <text x="810" y="558" class="small-text" text-anchor="middle" fill="#666">Transparent SQL routing</text>
+  </g>
+  
+  <!-- ========== NEW MULTI-TENANT SYSTEM (Right Column) ========== -->
+  
+  <g id="new-system">
+    <rect x="1030" y="120" width="320" height="340" class="new-box" rx="5"/>
+    <text x="1190" y="150" class="title-text" text-anchor="middle" fill="#0066CC">New Multi-Tenant System</text>
+    <text x="1190" y="170" class="small-text" text-anchor="middle" fill="#666">(Modern Platform)</text>
+    
+    <!-- New API -->
+    <rect x="1060" y="195" width="260" height="70" fill="#B3D9FF" stroke="#0052A3" stroke-width="2" rx="3"/>
+    <text x="1190" y="225" class="label-text" text-anchor="middle">Modern API/Application</text>
+    <text x="1190" y="245" class="small-text" text-anchor="middle" fill="#0052A3">• Workflow Logic</text>
+    <text x="1190" y="260" class="small-text" text-anchor="middle" fill="#0052A3">• Embedded in Legacy UI (iframe)</text>
+    
+    <!-- New Database -->
+    <rect x="1060" y="285" width="260" height="90" fill="#B3D9FF" stroke="#0052A3" stroke-width="2" rx="3"/>
+    <text x="1190" y="315" class="label-text" text-anchor="middle">Multi-Tenant Database</text>
+    <text x="1190" y="335" class="small-text" text-anchor="middle" fill="#0052A3">Unified Schema + tenant_id</text>
+    <text x="1190" y="352" class="small-text" text-anchor="middle" fill="#666">• Synced workflow entities</text>
+    <text x="1190" y="367" class="small-text" text-anchor="middle" fill="#666">• Enriched local data</text>
+    
+    <!-- Tenant Mapping -->
+    <rect x="1060" y="395" width="260" height="50" fill="#CCE5FF" stroke="#0052A3" stroke-width="1.5" rx="3"/>
+    <text x="1190" y="418" class="label-text" text-anchor="middle">Tenant Mapping</text>
+    <text x="1190" y="435" class="small-text" text-anchor="middle" fill="#666">Legacy Instance → Tenant ID</text>
+  </g>
+  
+  <!-- ========== DATA FLOWS (CLEAN ROUTING) ========== -->
+  
+  <!-- CDC FLOW 1: Legacy A DB -> Top -> Queue (green, goes UP then RIGHT) -->
+  <path d="M 190 240 L 190 90 L 710 90" class="flow-arrow sync-flow" marker-end="url(#arrowhead-green)" stroke-width="3"/>
+  <text x="200" y="160" class="small-text" fill="#009900" font-weight="bold">CDC</text>
+  <ellipse cx="190" cy="90" rx="15" ry="15" fill="#009900" opacity="0.9"/>
+  <text x="190" y="96" class="label-text" text-anchor="middle" fill="white" font-weight="bold">1</text>
+  
+  <!-- CDC FLOW 1B: Legacy B DB -> Bottom -> Queue (green, goes DOWN then RIGHT then UP) -->
+  <path d="M 190 535 L 190 585 L 650 585 L 650 180 L 710 180" class="flow-arrow sync-flow" marker-end="url(#arrowhead-green)" stroke-width="3"/>
+  <text x="200" y="570" class="small-text" fill="#009900" font-weight="bold">CDC</text>
+  <ellipse cx="650" cy="585" rx="15" ry="15" fill="#009900" opacity="0.9"/>
+  <text x="650" y="591" class="label-text" text-anchor="middle" fill="white" font-weight="bold">1</text>
+  
+  <!-- SYNC FLOW 2: Queue -> Sync Adapters (green, straight down) -->
+  <path d="M 810 200 L 810 240" class="flow-arrow sync-flow" marker-end="url(#arrowhead-green)" stroke-width="3"/>
+  <ellipse cx="810" cy="220" rx="15" ry="15" fill="#009900" opacity="0.9"/>
+  <text x="810" y="226" class="label-text" text-anchor="middle" fill="white" font-weight="bold">2</text>
+  
+  <!-- SYNC FLOW 3: Adapters -> New DB (green, straight right) -->
+  <path d="M 910 315 L 1060 315" class="flow-arrow sync-flow" marker-end="url(#arrowhead-green)" stroke-width="4"/>
+  <text x="970" y="310" class="small-text" fill="#009900" font-weight="bold">Mapped</text>
+  <text x="970" y="325" class="small-text" fill="#009900" font-weight="bold">Data</text>
+  <ellipse cx="985" cy="315" rx="15" ry="15" fill="#009900" opacity="0.9"/>
+  <text x="985" y="321" class="label-text" text-anchor="middle" fill="white" font-weight="bold">3</text>
+  
+  <!-- READ FLOW 4: New DB -> New API (blue, straight up) -->
+  <path d="M 1140 285 L 1140 265" class="flow-arrow read-flow" marker-end="url(#arrowhead-blue)" stroke-width="4"/>
+  <path d="M 1240 285 L 1240 265" class="flow-arrow read-flow" marker-end="url(#arrowhead-blue)" stroke-width="4"/>
+  <text x="1080" y="278" class="small-text" fill="#0066CC" font-weight="bold">Read (Local)</text>
+  <ellipse cx="1190" cy="275" rx="15" ry="15" fill="#0066CC" opacity="0.9"/>
+  <text x="1190" y="281" class="label-text" text-anchor="middle" fill="white" font-weight="bold">4</text>
+  
+  <!-- WRITE FLOW 5A: New API -> Write Layer (purple, goes LEFT then DOWN, AVOIDS queue) -->
+  <path d="M 1060 230 L 970 230 L 970 495 L 910 495" class="flow-arrow write-flow" marker-end="url(#arrowhead-purple)" stroke-width="3"/>
+  <text x="975" y="350" class="small-text" fill="#CC00CC" font-weight="bold">Write</text>
+  <text x="975" y="365" class="small-text" fill="#CC00CC" font-weight="bold">Request</text>
+  <ellipse cx="970" cy="230" rx="15" ry="15" fill="#CC00CC" opacity="0.9"/>
+  <text x="970" y="236" class="label-text" text-anchor="middle" fill="white" font-weight="bold">5</text>
+  
+  <!-- WRITE FLOW 6A: Write Layer A -> Legacy A (purple, DIRECT connection, goes LEFT then UP) -->
+  <path d="M 730 479 L 370 479 L 370 262 L 310 262" class="flow-arrow write-flow" marker-end="url(#arrowhead-purple)" stroke-width="3"/>
+  <text x="380" y="370" class="small-text" fill="#CC00CC" font-weight="bold">Direct SQL</text>
+  <text x="380" y="385" class="small-text" fill="#CC00CC" font-weight="bold">(Synchronous)</text>
+  <ellipse cx="370" cy="479" rx="15" ry="15" fill="#CC00CC" opacity="0.9"/>
+  <text x="370" y="485" class="label-text" text-anchor="middle" fill="white" font-weight="bold">6</text>
+  
+  <!-- WRITE FLOW 6B: Write Layer B -> Legacy B (purple, DIRECT connection, straight LEFT) -->
+  <path d="M 730 524 L 330 524" class="flow-arrow write-flow" marker-end="url(#arrowhead-purple)" stroke-width="3"/>
+  <text x="500" y="520" class="small-text" fill="#CC00CC" font-weight="bold">Direct SQL (Synchronous)</text>
+  
+  <!-- ========== LEGEND ========== -->
+  
+  <g id="legend">
+    <rect x="50" y="620" width="360" height="260" fill="white" stroke="#333" stroke-width="2" rx="5"/>
+    <text x="230" y="650" class="title-text" text-anchor="middle">Legend</text>
+    
+    <!-- Legacy -->
+    <rect x="70" y="670" width="30" height="20" class="legacy-box"/>
+    <text x="110" y="685" class="legend-text">Legacy Systems (Source of Truth)</text>
+    
+    <!-- New -->
+    <rect x="70" y="700" width="30" height="20" class="new-box"/>
+    <text x="110" y="715" class="legend-text">New Multi-Tenant System</text>
+    
+    <!-- Adapters -->
+    <rect x="70" y="730" width="30" height="20" class="adapter-box"/>
+    <text x="110" y="745" class="legend-text">Sync/Write Adapters</text>
+    
+    <!-- Infrastructure -->
+    <rect x="70" y="760" width="30" height="20" class="infra-box"/>
+    <text x="110" y="775" class="legend-text">Infrastructure (Queues)</text>
+    
+    <!-- Sync Flow -->
+    <line x1="70" y1="795" x2="100" y2="795" class="flow-arrow sync-flow" marker-end="url(#arrowhead-green)" stroke-width="3"/>
+    <text x="110" y="800" class="legend-text" fill="#009900">Sync Flow (Legacy → New)</text>
+    
+    <!-- Write Flow -->
+    <line x1="70" y1="820" x2="100" y2="820" class="flow-arrow write-flow" marker-end="url(#arrowhead-purple)" stroke-width="3"/>
+    <text x="110" y="825" class="legend-text" fill="#CC00CC">Write Flow (New → Legacy)</text>
+    
+    <!-- Read Flow -->
+    <line x1="70" y1="845" x2="100" y2="845" class="flow-arrow read-flow" marker-end="url(#arrowhead-blue)" stroke-width="3"/>
+    <text x="110" y="850" class="legend-text" fill="#0066CC">Read Flow (Local to New DB)</text>
+  </g>
+  
+  <!-- Data Flow Sequence (outside legend) -->
+  <g id="flow-sequence">
+    <text x="230" y="945" class="small-text" text-anchor="middle" fill="#333" font-weight="bold">Data Flow Sequence:</text>
+    <text x="230" y="963" class="small-text" text-anchor="middle" fill="#666">① CDC captures → ② Queue processes → ③ Sync to New DB →</text>
+    <text x="230" y="978" class="small-text" text-anchor="middle" fill="#666">④ New API reads local → ⑤ User writes (sync) → ⑥ Direct SQL write to Legacy DB</text>
+  </g>
+  
+  <!-- ========== KEY PRINCIPLES ========== -->
+  
+  <g id="principles">
+    <rect x="480" y="620" width="870" height="300" fill="#FFFEF0" stroke="#333" stroke-width="2" rx="5"/>
+    <text x="915" y="650" class="title-text" text-anchor="middle">Key Architecture Principles</text>
+    
+    <text x="500" y="680" class="legend-text" font-weight="bold">Unidirectional Sync:</text>
+    <text x="520" y="700" class="small-text">• CDC captures changes in legacy databases</text>
+    <text x="520" y="717" class="small-text">• Events flow through message queue for decoupling</text>
+    <text x="520" y="734" class="small-text">• Adapters map legacy schemas to unified schema</text>
+    <text x="520" y="751" class="small-text">• New system receives changes (legacy authoritative)</text>
+    
+    <text x="500" y="780" class="legend-text" font-weight="bold">Write-Through Pattern:</text>
+    <text x="520" y="800" class="small-text">• All writes are synchronous SQL to legacy databases</text>
+    <text x="520" y="817" class="small-text">• Write-Through Layer routes to correct legacy DB</text>
+    <text x="520" y="834" class="small-text">• CDC then syncs changes back (round-trip confirmation)</text>
+    
+    <text x="500" y="863" class="legend-text" font-weight="bold">Multi-Tenant Design:</text>
+    <text x="520" y="883" class="small-text">• 100+ legacy instances map to tenants</text>
+    <text x="520" y="900" class="small-text">• Unified schema with tenant_id</text>
+    
+    <text x="915" y="680" class="legend-text" font-weight="bold">Local Reads (Performance):</text>
+    <text x="935" y="700" class="small-text">• New system reads from its own database</text>
+    <text x="935" y="717" class="small-text">• No legacy queries for synced data</text>
+    <text x="935" y="734" class="small-text">• Enriched data only in new DB</text>
+    <text x="935" y="751" class="small-text">• Eventually consistent</text>
+    
+    <text x="915" y="780" class="legend-text" font-weight="bold">Progressive Migration:</text>
+    <text x="935" y="800" class="small-text">• One workflow at a time</text>
+    <text x="935" y="817" class="small-text">• Backfill all tenant data before enabling</text>
+    <text x="935" y="834" class="small-text">• Phased rollout: Pilot → Early → GA</text>
+    
+    <text x="915" y="863" class="legend-text" font-weight="bold">User Experience:</text>
+    <text x="935" y="883" class="small-text">• New system embedded in legacy UI (iframe)</text>
+    <text x="935" y="900" class="small-text">• No context-switching for users</text>
+  </g>
+</svg>
