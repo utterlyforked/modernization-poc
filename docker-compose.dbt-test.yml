@@ -1,5 +1,7 @@
 # Run via make test (writes test-results/junit.xml and test-results/summary.json).
 # Fully isolated from the main stack (own network, no published ports, no volumes persisted).
+name: modernization-poc-dbt-test
+
 services:
   postgres-test:
     image: postgres:15
