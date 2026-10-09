@@ -1,6 +1,6 @@
 # One interface for the compose stack. Run `make help` for targets.
 .DEFAULT_GOAL := help
-.PHONY: help up down clean restart logs ps debug test test-dbt test-e2e
+.PHONY: help up down clean restart logs ps debug test test-unit test-dbt test-e2e
 
 help: ## Show this help
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -25,7 +25,10 @@ ps: ## Show service status
 debug: ## Print a diagnostic report for the running stack
 	./scripts/debug.sh
 
-test: test-dbt test-e2e ## Run all tests in Docker
+test: test-unit test-dbt test-e2e ## Run all tests in Docker
+
+test-unit: ## Unit tests (no stack or network needed)
+	./scripts/test-unit.sh
 
 test-dbt: ## dbt model tests (isolated throwaway Postgres)
 	./scripts/test-dbt.sh

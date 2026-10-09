@@ -86,7 +86,7 @@ A unidirectional-sync + write-through modernization demo, run as a Docker Compos
 | `make down` | Stop the stack (keeps data) |
 | `make clean` | Stop the stack and delete data volumes |
 | `make logs` | Follow logs (`SERVICE=cdc-consumer` for one service) |
-| `make test` | Run dbt and end-to-end tests in Docker |
+| `make test` | Run unit, dbt and end-to-end tests in Docker (`make test-unit` for just the fast unit tests) |
 
 Run `make help` for all targets. Only Docker (with the compose plugin) and make are needed.
 Automated tests: `make test`. Manual scenarios: [docs/TESTING.md](docs/TESTING.md).
@@ -399,7 +399,7 @@ To make this more realistic:
 ├── scripts/
 │   ├── register-connectors.sh  # Auto-register connectors
 │   ├── up.sh                   # Start and wait (make up)
-│   ├── test-dbt.sh / test-e2e.sh  # Test runners (make test)
+│   ├── test-unit.sh / test-dbt.sh / test-e2e.sh  # Test runners (make test)
 │   └── debug.sh                # Diagnostics (make debug)
 ├── dbt-project/                 # dbt transformation project
 │   ├── dbt_project.yml
@@ -414,11 +414,12 @@ To make this more realistic:
 │   ├── api.py
 │   └── requirements.txt
 ├── web/index.html               # Web UI
-├── tests/                       # dbt and e2e pytest suites
+├── tests/                       # unit, dbt and e2e pytest suites
 ├── docs/                        # Architecture notes, manual test guide, diagrams
 ├── Makefile                     # up / down / clean / logs / test
 ├── Dockerfile.consumer          # CDC consumer image
 ├── Dockerfile.api               # API service image
+├── Dockerfile.unit-test         # unit test runner image
 ├── Dockerfile.dbt-test          # dbt test runner image
 ├── Dockerfile.e2e-test          # e2e test runner image
 └── README.md                    # This file

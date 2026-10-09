@@ -39,6 +39,52 @@ TENANT_MAPPING = {
 }
 
 
+OPERATION_MAP = {'c': 'INSERT', 'u': 'UPDATE', 'd': 'DELETE', 'r': 'INSERT'}
+
+
+def convert_date(value):
+    """Convert Debezium date (days since epoch) to proper date"""
+    if value is None:
+        return None
+    # If it's already a string, return it
+    if isinstance(value, str):
+        return value
+    # If it's an integer (days since epoch), convert it
+    if isinstance(value, int):
+        from datetime import date, timedelta
+        epoch = date(1970, 1, 1)
+        return (epoch + timedelta(days=value)).isoformat()
+    return value
+
+
+def parse_event(topic, raw):
+    """Parse a raw Debezium message into (tenant_id, operation, row).
+
+    Returns None for a topic with no tenant mapping. `row` is the payload's
+    `after` image (None for deletes).
+    """
+    # Debezium JSON format - parse bytes to JSON
+    if isinstance(raw, bytes):
+        value = json.loads(raw.decode('utf-8'))
+    elif isinstance(raw, str):
+        value = json.loads(raw)
+    else:
+        value = raw
+
+    # Get tenant from topic
+    tenant_id = TENANT_MAPPING.get(topic)
+    if not tenant_id:
+        return None
+
+    # Debezium JSON format has payload wrapper
+    payload = value.get('payload', value)
+
+    # Get operation type
+    operation = OPERATION_MAP.get(payload.get('op', 'c'), 'INSERT')  # c=create, u=update, d=delete, r=read
+
+    return tenant_id, operation, payload.get('after', {})
+
+
 class CDCConsumer:
     def __init__(self):
         self.consumer = None
@@ -76,28 +122,12 @@ class CDCConsumer:
                 print("Retrying in 5 seconds...", flush=True)
                 time.sleep(5)
 
-    def convert_date(self, value):
-        """Convert Debezium date (days since epoch) to proper date"""
-        if value is None:
-            return None
-        # If it's already a string, return it
-        if isinstance(value, str):
-            return value
-        # If it's an integer (days since epoch), convert it
-        if isinstance(value, int):
-            from datetime import date, timedelta
-            epoch = date(1970, 1, 1)
-            return (epoch + timedelta(days=value)).isoformat()
-        return value
-
-    def stage_record(self, tenant_id, payload, operation):
+    def stage_record(self, tenant_id, after, operation):
         """Stage a record in person_staging table"""
         try:
             cursor = self.db_conn.cursor()
 
-            # Extract fields - handle both Legacy A and Legacy B schemas
-            after = payload.get('after', {})
-
+            # Fields come from `after` - handles both Legacy A and Legacy B schemas
             insert_sql = """
                 INSERT INTO person_staging
                 (tenant_id, source_id, source_table, operation, firstname, surname,
@@ -112,7 +142,7 @@ class CDCConsumer:
                 operation,
                 after.get('firstname'),
                 after.get('surname'),
-                self.convert_date(after.get('date_of_birth')),
+                convert_date(after.get('date_of_birth')),
                 after.get('city'),
                 after.get('data_1'),
                 after.get('data_2'),
@@ -196,30 +226,16 @@ class CDCConsumer:
                         print("⚠️  Message value is None, skipping", flush=True)
                         continue
 
-                    # Debezium JSON format - parse bytes to JSON
-                    if isinstance(value, bytes):
-                        value = json.loads(value.decode('utf-8'))
-                    elif isinstance(value, str):
-                        value = json.loads(value)
+                    event = parse_event(msg.topic(), value)
 
-                    # Get tenant from topic
-                    topic = msg.topic()
-                    tenant_id = TENANT_MAPPING.get(topic)
-
-                    if not tenant_id:
-                        print(f"❌ Unknown topic: {topic}", flush=True)
+                    if event is None:
+                        print(f"❌ Unknown topic: {msg.topic()}", flush=True)
                         continue
 
-                    # Debezium JSON format has payload wrapper
-                    payload = value.get('payload', value)
-
-                    # Get operation type
-                    operation = payload.get('op', 'c')  # c=create, u=update, d=delete, r=read
-                    operation_map = {'c': 'INSERT', 'u': 'UPDATE', 'd': 'DELETE', 'r': 'INSERT'}
-                    operation = operation_map.get(operation, 'INSERT')
+                    tenant_id, operation, row = event
 
                     # Stage the record
-                    self.stage_record(tenant_id, payload, operation)
+                    self.stage_record(tenant_id, row, operation)
                     staged_count += 1
 
                     # Commit offset
