@@ -8,8 +8,9 @@ WORKDIR /app
 COPY dbt-project/ /dbt/
 COPY tests/ /app/tests/
 
-# Writable by any uid so the container can run as the host user (keeps ./test-results user-owned)
-RUN chmod -R a+rwX /dbt
+# Writable by any uid so the container can run as the host user (keeps ./test-results user-owned).
+# /app is the working dir: dbt creates dbt_packages there.
+RUN chmod -R a+rwX /dbt /app
 ENV DBT_PROFILES_DIR=/dbt HOME=/tmp TEST_RESULTS_DIR=/results DBT_LOG_PATH=/tmp/dbt-logs
 
 CMD ["pytest", "tests/dbt", "-v", "--junitxml=/results/junit.xml", "-p", "no:cacheprovider"]
