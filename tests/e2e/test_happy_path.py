@@ -1,25 +1,9 @@
 """Happy-path e2e tests: automated version of TESTING.md scenarios 1-7."""
 import pytest
 
-from conftest import TENANTS, wait_until
+from conftest import TENANTS, legacy_payload, wait_for_person
 
 pytestmark = pytest.mark.e2e
-
-LEGACY_A = ["tenant_a1", "tenant_a2"]
-
-
-def wait_for_person(api, tenant_id, legacy_id, predicate=lambda p: True):
-    def check():
-        person = api.find_person(tenant_id, legacy_id)
-        return person if person and predicate(person) else None
-    return wait_until(check, desc=f"{tenant_id}/{legacy_id} in /api/persons")
-
-
-def legacy_payload(tenant_id, surname, extra):
-    base = {"firstname": "Direct", "surname": surname, "date_of_birth": "1990-01-01", "city": "Legacyville"}
-    if tenant_id in LEGACY_A:
-        return {**base, "data_1": "one", "data_2": extra, "data_3": "three"}
-    return {**base, "data_a": "aaa", "data_b": "bbb", "data_c": extra}
 
 
 @pytest.mark.parametrize("tenant_id", ["tenant_a1", "tenant_b1"])

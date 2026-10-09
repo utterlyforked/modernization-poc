@@ -86,10 +86,10 @@ A unidirectional-sync + write-through modernization demo, run as a Docker Compos
 | `make down` | Stop the stack (keeps data) |
 | `make clean` | Stop the stack and delete data volumes |
 | `make logs` | Follow logs (`SERVICE=cdc-consumer` for one service) |
-| `make test` | Run unit, dbt and end-to-end tests in Docker (`make test-unit` for just the fast unit tests) |
+| `make test` | Run every suite in Docker (`test-unit`, `test-dbt`, `test-e2e`, `test-resilience`); each also runs alone |
 
 Run `make help` for all targets. Only Docker (with the compose plugin) and make are needed.
-Automated tests: `make test`. Manual scenarios: [docs/TESTING.md](docs/TESTING.md).
+Automated tests: `make test` (Docker only; reports land in `test-results/` as `junit-<suite>.xml` and `summary-<suite>.json`). The e2e suites start their own stack, so run `make down` first. Manual scenarios: [docs/TESTING.md](docs/TESTING.md).
 
 ### 1. Start All Services
 
@@ -399,7 +399,8 @@ To make this more realistic:
 ├── scripts/
 │   ├── register-connectors.sh  # Auto-register connectors
 │   ├── up.sh                   # Start and wait (make up)
-│   ├── test-unit.sh / test-dbt.sh / test-e2e.sh  # Test runners (make test)
+│   ├── test-unit.sh / test-dbt.sh / test-e2e.sh / test-resilience.sh  # Test runners (make test)
+│   ├── e2e-lib.sh              # Shared stack up/down for the e2e runners
 │   └── debug.sh                # Diagnostics (make debug)
 ├── dbt-project/                 # dbt transformation project
 │   ├── dbt_project.yml
@@ -414,7 +415,7 @@ To make this more realistic:
 │   ├── api.py
 │   └── requirements.txt
 ├── web/index.html               # Web UI
-├── tests/                       # unit, dbt and e2e pytest suites
+├── tests/                       # unit, dbt, e2e and resilience pytest suites
 ├── docs/                        # Architecture notes, manual test guide, diagrams
 ├── Makefile                     # up / down / clean / logs / test
 ├── Dockerfile.consumer          # CDC consumer image
