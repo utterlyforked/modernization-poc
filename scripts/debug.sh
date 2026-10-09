@@ -5,7 +5,7 @@ echo "========================================"
 echo ""
 
 echo "1️⃣ Checking container status..."
-docker-compose ps
+docker compose ps
 echo ""
 
 echo "2️⃣ Checking Debezium connectors..."
@@ -42,11 +42,11 @@ docker exec -it postgres-new-system psql -U newuser -d new_system -c "SELECT COU
 echo ""
 
 echo "6️⃣ Recent consumer logs (last 30 lines)..."
-docker-compose logs --tail=30 cdc-consumer
+docker compose logs --tail=30 cdc-consumer
 echo ""
 
 echo "7️⃣ Recent debezium logs (last 20 lines)..."
-docker-compose logs --tail=20 debezium
+docker compose logs --tail=20 debezium
 echo ""
 
 echo "8️⃣ Testing Kafka message consumption..."

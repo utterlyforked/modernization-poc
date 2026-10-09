@@ -205,7 +205,7 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html
+      - ./web/index.html:/usr/share/nginx/html/index.html
     networks:
       - modernisation
 

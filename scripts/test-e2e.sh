@@ -5,7 +5,7 @@
 # E2E_RUNS=2 repeats the suite against the same stack (re-runnability check).
 # Reports: test-results/junit-e2e.xml and test-results/summary.json. Exit code 0 only if all runs pass.
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 export HOST_UID=$(id -u) HOST_GID=$(id -g)
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.e2e-test.yml"

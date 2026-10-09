@@ -3,7 +3,7 @@
 # Reports: test-results/junit.xml (JUnit XML) and test-results/summary.json.
 # Exit code: 0 if all tests passed, non-zero otherwise.
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 export HOST_UID=$(id -u) HOST_GID=$(id -g)
 COMPOSE="docker compose -f docker-compose.dbt-test.yml"

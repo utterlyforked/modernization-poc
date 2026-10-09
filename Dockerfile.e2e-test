@@ -1,4 +1,4 @@
-# Self-contained e2e test runner. Pairs with docker-compose.e2e-test.yml and ./test-e2e.sh;
+# Self-contained e2e test runner. Pairs with docker-compose.e2e-test.yml and make test-e2e;
 # runs on the compose network so it reaches api:5000 and debezium:8083 directly.
 FROM python:3.11-slim
 

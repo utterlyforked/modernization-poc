@@ -1,4 +1,4 @@
-# Override file: layered on docker-compose.yml by ./test-e2e.sh (-f docker-compose.yml -f this file).
+# Override file: layered on docker-compose.yml by make test-e2e (-f docker-compose.yml -f this file).
 services:
   e2e-test:
     build:

@@ -7,7 +7,7 @@ This guide helps you validate that all components are working correctly.
 ### 1. Verify All Containers Are Running
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 Expected output: All services should show "Up" status:
@@ -81,7 +81,7 @@ docker exec -it kafka kafka-console-consumer \
 
 ```bash
 # Check consumer logs
-docker-compose logs cdc-consumer | tail -20
+docker compose logs cdc-consumer | tail -20
 
 # Check staging table
 docker exec -it postgres-new-system psql -U newuser -d new_system -c \
@@ -262,7 +262,7 @@ done
 
 ```bash
 # Stop consumer
-docker-compose stop cdc-consumer
+docker compose stop cdc-consumer
 
 # Insert data
 docker exec -it postgres-legacy-a1 psql -U legacyuser -d legacy_a1 -c \
@@ -273,7 +273,7 @@ docker exec -it postgres-legacy-a1 psql -U legacyuser -d legacy_a1 -c \
 sleep 3
 
 # Start consumer
-docker-compose start cdc-consumer
+docker compose start cdc-consumer
 
 # Wait for catch-up
 sleep 10
@@ -290,7 +290,7 @@ curl http://localhost:5000/api/persons | jq '.[] | select(.firstname == "Downtim
 
 ```bash
 # Stop legacy database
-docker-compose stop postgres-legacy-a1
+docker compose stop postgres-legacy-a1
 
 # Try to write via API (should fail gracefully)
 curl -X POST http://localhost:5000/api/persons \
@@ -298,7 +298,7 @@ curl -X POST http://localhost:5000/api/persons \
   -d '{"tenant_id": "tenant_a1", "firstname": "Test", "surname": "User", "date_of_birth": "1990-01-01", "city": "City"}'
 
 # Restart database
-docker-compose start postgres-legacy-a1
+docker compose start postgres-legacy-a1
 
 # Wait for recovery
 sleep 10
@@ -314,7 +314,7 @@ curl http://localhost:5000/api/health
 ### View Live Consumer Activity
 
 ```bash
-docker-compose logs -f cdc-consumer
+docker compose logs -f cdc-consumer
 ```
 
 Look for:
@@ -349,11 +349,11 @@ docker exec -it postgres-new-system psql -U newuser -d new_system -c \
 
 ```bash
 # Reset all data
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 
 # Or just reset databases
-docker-compose restart postgres-legacy-a1 postgres-legacy-a2 postgres-legacy-b1 postgres-legacy-b2 postgres-new-system
+docker compose restart postgres-legacy-a1 postgres-legacy-a2 postgres-legacy-b1 postgres-legacy-b2 postgres-new-system
 ```
 
 ## Success Criteria
@@ -374,10 +374,10 @@ docker-compose restart postgres-legacy-a1 postgres-legacy-a2 postgres-legacy-b1 
 
 If tests fail, check:
 
-1. **Container logs:** `docker-compose logs <service>`
+1. **Container logs:** `docker compose logs <service>`
 2. **Connector status:** `curl http://localhost:8083/connectors/<name>/status`
 3. **Kafka topics:** Are messages arriving?
 4. **Database contents:** Are records present?
 5. **Network connectivity:** Can containers reach each other?
 
-See README-DOCKER.md "Common Issues" section for detailed troubleshooting.
+See README.md "Common Issues" section for detailed troubleshooting.
