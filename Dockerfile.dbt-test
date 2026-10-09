@@ -12,4 +12,4 @@ COPY tests/ /app/tests/
 RUN chmod -R a+rwX /dbt
 ENV DBT_PROFILES_DIR=/dbt HOME=/tmp TEST_RESULTS_DIR=/results DBT_LOG_PATH=/tmp/dbt-logs
 
-CMD ["pytest", "tests", "-v", "--junitxml=/results/junit.xml", "-p", "no:cacheprovider"]
+CMD ["pytest", "tests/dbt", "-v", "--junitxml=/results/junit.xml", "-p", "no:cacheprovider"]
