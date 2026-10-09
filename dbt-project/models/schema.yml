@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: staging
+    description: Raw CDC events from Kafka
+    database: new_system
+    schema: public
+    tables:
+      - name: person_staging
+        description: Staging table for person records from all legacy systems
+
+models:
+  - name: person_unified
+    description: Unified person table with transformed schema
+    columns:
+      - name: tenant_id
+        description: Tenant identifier (tenant_a1, tenant_a2, tenant_b1, tenant_b2)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tenant_a1', 'tenant_a2', 'tenant_b1', 'tenant_b2']
+      - name: legacy_id
+        description: Original ID from legacy system
+        tests:
+          - not_null
+      - name: firstname
+        description: Person first name
+        tests:
+          - not_null
+      - name: surname
+        description: Person surname
+        tests:
+          - not_null
+      - name: extra_field
+        description: Mapped from data_2 (Legacy A) or data_c (Legacy B)

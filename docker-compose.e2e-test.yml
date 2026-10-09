@@ -1,0 +1,21 @@
+# Override file: layered on docker-compose.yml by make test-e2e (-f docker-compose.yml -f this file).
+services:
+  e2e-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e-test
+    depends_on:
+      api:
+        condition: service_started
+      debezium:
+        condition: service_healthy
+      cdc-consumer:
+        condition: service_started
+    environment:
+      API_URL: http://api:5000
+      DEBEZIUM_URL: http://debezium:8083
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - ./test-results:/results
+    networks:
+      - modernisation

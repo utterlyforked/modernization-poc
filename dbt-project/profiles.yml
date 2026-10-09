@@ -1,0 +1,13 @@
+modernisation:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('NEW_SYSTEM_DB_HOST', 'postgres-new-system') }}"
+      port: "{{ env_var('NEW_SYSTEM_DB_PORT', 5432) | int }}"
+      user: "{{ env_var('NEW_SYSTEM_DB_USER', 'newuser') }}"
+      password: "{{ env_var('NEW_SYSTEM_DB_PASS', 'newpass') }}"
+      dbname: "{{ env_var('NEW_SYSTEM_DB_NAME', 'new_system') }}"
+      schema: public
+      threads: 4
+      keepalives_idle: 0

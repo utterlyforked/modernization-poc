@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" style="background: #0a0e27;">
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#00d4ff" />
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ff6b6b" />
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="40" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#fff" text-anchor="middle">
+    Data Flow Patterns
+  </text>
+
+  <!-- Flow 1: CDC Sync Flow -->
+  <g id="cdc-flow">
+    <text x="100" y="100" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#00d4ff">
+      1. CDC Sync Flow (Legacy → New System)
+    </text>
+    <rect x="50" y="110" width="1100" height="200" rx="10" fill="rgba(0,212,255,0.05)" stroke="#00d4ff" stroke-width="2" stroke-dasharray="5,5"/>
+
+    <!-- Steps -->
+    <g transform="translate(80, 140)">
+      <!-- Step 1 -->
+      <circle cx="30" cy="30" r="25" fill="#ff6b6b" opacity="0.2" stroke="#ff6b6b" stroke-width="2"/>
+      <text x="30" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
+      <text x="30" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">INSERT/</text>
+      <text x="30" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">UPDATE</text>
+      <text x="30" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Legacy DB</text>
+
+      <line x1="55" y1="30" x2="105" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="80" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">WAL log</text>
+
+      <!-- Step 2 -->
+      <circle cx="130" cy="30" r="25" fill="#00d4ff" opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+      <text x="130" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
+      <text x="130" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Debezium</text>
+      <text x="130" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Connector</text>
+      <text x="130" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Reads WAL</text>
+
+      <line x1="155" y1="30" x2="205" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="180" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">Publish</text>
+
+      <!-- Step 3 -->
+      <circle cx="230" cy="30" r="25" fill="#00d4ff" opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+      <text x="230" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
+      <text x="230" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Kafka</text>
+      <text x="230" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Topic</text>
+      <text x="230" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Event queue</text>
+
+      <line x1="255" y1="30" x2="305" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="280" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">Poll</text>
+
+      <!-- Step 4 -->
+      <circle cx="330" cy="30" r="25" fill="#00d4ff" opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+      <text x="330" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">4</text>
+      <text x="330" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Consumer</text>
+      <text x="330" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Stage</text>
+      <text x="330" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">person_staging</text>
+
+      <line x1="355" y1="30" x2="405" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="380" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">Every 5s</text>
+
+      <!-- Step 5 -->
+      <circle cx="430" cy="30" r="25" fill="#00d4ff" opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+      <text x="430" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">5</text>
+      <text x="430" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">dbt</text>
+      <text x="430" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Transform</text>
+      <text x="430" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Map schema</text>
+
+      <line x1="455" y1="30" x2="505" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="480" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">Merge</text>
+
+      <!-- Step 6 -->
+      <circle cx="530" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="530" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">6</text>
+      <text x="530" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">person</text>
+      <text x="530" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">table</text>
+      <text x="530" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">New system</text>
+    </g>
+  </g>
+
+  <!-- Flow 2: Write-Through Flow -->
+  <g id="write-through-flow">
+    <text x="100" y="360" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ff6b6b">
+      2. Write-Through Flow (New System → Legacy → CDC Sync Back)
+    </text>
+    <rect x="50" y="370" width="1100" height="200" rx="10" fill="rgba(255,107,107,0.05)" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="5,5"/>
+
+    <!-- Steps -->
+    <g transform="translate(80, 400)">
+      <!-- Step 1 -->
+      <circle cx="30" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="30" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
+      <text x="30" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">User</text>
+      <text x="30" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Edit</text>
+      <text x="30" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Web UI</text>
+
+      <line x1="55" y1="30" x2="105" y2="30" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrow-red)"/>
+      <text x="80" y="20" font-family="Arial, sans-serif" font-size="8" fill="#ff6b6b" text-anchor="middle">PUT</text>
+
+      <!-- Step 2 -->
+      <circle cx="130" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="130" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
+      <text x="130" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">API</text>
+      <text x="130" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Service</text>
+      <text x="130" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Route request</text>
+
+      <line x1="155" y1="30" x2="205" y2="30" stroke="#ff6b6b" stroke-width="2" marker-end="url(#arrow-red)"/>
+      <text x="180" y="20" font-family="Arial, sans-serif" font-size="8" fill="#ff6b6b" text-anchor="middle">UPDATE</text>
+
+      <!-- Step 3 -->
+      <circle cx="230" cy="30" r="25" fill="#ff6b6b" opacity="0.2" stroke="#ff6b6b" stroke-width="2"/>
+      <text x="230" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
+      <text x="230" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Legacy</text>
+      <text x="230" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">DB</text>
+      <text x="230" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Source updated</text>
+
+      <line x1="255" y1="30" x2="305" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="280" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">CDC Flow</text>
+
+      <!-- Step 4 -->
+      <circle cx="330" cy="30" r="25" fill="#00d4ff" opacity="0.2" stroke="#00d4ff" stroke-width="2"/>
+      <text x="330" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">4</text>
+      <text x="330" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">CDC</text>
+      <text x="330" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Pipeline</text>
+      <text x="330" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">See flow #1</text>
+
+      <line x1="355" y1="30" x2="405" y2="30" stroke="#00d4ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="380" y="20" font-family="Arial, sans-serif" font-size="8" fill="#00d4ff" text-anchor="middle">~5-7s</text>
+
+      <!-- Step 5 -->
+      <circle cx="430" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="430" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">5</text>
+      <text x="430" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">person</text>
+      <text x="430" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">table</text>
+      <text x="430" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Synced back</text>
+
+      <line x1="455" y1="30" x2="505" y2="30" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+      <text x="480" y="20" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">Auto-refresh</text>
+
+      <!-- Step 6 -->
+      <circle cx="530" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="530" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">6</text>
+      <text x="530" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">UI</text>
+      <text x="530" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Updated</text>
+      <text x="530" y="100" font-family="Arial, sans-serif" font-size="9" fill="#a0aec0" text-anchor="middle">Shows changes</text>
+    </g>
+
+    <!-- Important note -->
+    <rect x="680" y="410" width="400" height="120" rx="5" fill="rgba(139,92,246,0.1)" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="880" y="435" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#8b5cf6" text-anchor="middle">
+      Important: modernized_only field
+    </text>
+    <text x="880" y="455" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">
+      Step 2: API updates modernized_only
+    </text>
+    <text x="880" y="472" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">
+      directly in new system
+    </text>
+    <text x="880" y="492" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">
+      Step 5: dbt preserves modernized_only
+    </text>
+    <text x="880" y="509" font-family="Arial, sans-serif" font-size="10" fill="#a0aec0" text-anchor="middle">
+      during CDC merge
+    </text>
+
+  </g>
+
+  <!-- Flow 3: Read Flow -->
+  <g id="read-flow">
+    <text x="100" y="620" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#8b5cf6">
+      3. Read Flow (Local Reads from New System)
+    </text>
+    <rect x="50" y="630" width="1100" height="120" rx="10" fill="rgba(139,92,246,0.05)" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5,5"/>
+
+    <!-- Steps -->
+    <g transform="translate(280, 660)">
+      <!-- Step 1 -->
+      <circle cx="30" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="30" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
+      <text x="30" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">User</text>
+      <text x="30" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">View</text>
+
+      <line x1="55" y1="30" x2="105" y2="30" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+      <text x="80" y="20" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">GET</text>
+
+      <!-- Step 2 -->
+      <circle cx="130" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="130" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
+      <text x="130" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">API</text>
+      <text x="130" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">/persons</text>
+
+      <line x1="155" y1="30" x2="205" y2="30" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+      <text x="180" y="20" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">SELECT</text>
+
+      <!-- Step 3 -->
+      <circle cx="230" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="230" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
+      <text x="230" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">person</text>
+      <text x="230" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">table</text>
+
+      <line x1="255" y1="30" x2="305" y2="30" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+      <text x="280" y="20" font-family="Arial, sans-serif" font-size="8" fill="#8b5cf6" text-anchor="middle">JSON</text>
+
+      <!-- Step 4 -->
+      <circle cx="330" cy="30" r="25" fill="#8b5cf6" opacity="0.2" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="330" y="37" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">4</text>
+      <text x="330" y="70" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">UI</text>
+      <text x="330" y="85" font-family="Arial, sans-serif" font-size="11" fill="#fff" text-anchor="middle">Display</text>
+    </g>
+
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="780" font-family="Arial, sans-serif" font-size="10" fill="#666" text-anchor="middle">
+    All 3 flows work together to provide: Local reads (fast) + Write-through to legacy (correct) + CDC sync (automatic)
+  </text>
+</svg>

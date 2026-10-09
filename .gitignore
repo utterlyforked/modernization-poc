@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# dbt
+dbt-project/target/
+dbt-project/dbt_packages/
+dbt-project/logs/
+
+# SQLite databases (old version)
+*.db
+*.db-journal
+
+# Docker
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+.claude/settings.local.json
+
+# Test reports
+test-results/

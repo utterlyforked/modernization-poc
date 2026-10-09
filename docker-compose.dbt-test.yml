@@ -1,0 +1,35 @@
+# Run via make test (writes test-results/junit.xml and test-results/summary.json).
+# Fully isolated from the main stack (own network, no published ports, no volumes persisted).
+name: modernization-poc-dbt-test
+
+services:
+  postgres-test:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: newuser
+      POSTGRES_PASSWORD: newpass
+      POSTGRES_DB: new_system
+    volumes:
+      - ./postgres-init/new_system.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U newuser -d new_system"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  dbt-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt-test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    environment:
+      NEW_SYSTEM_DB_HOST: postgres-test
+      NEW_SYSTEM_DB_PORT: 5432
+      NEW_SYSTEM_DB_NAME: new_system
+      NEW_SYSTEM_DB_USER: newuser
+      NEW_SYSTEM_DB_PASS: newpass
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - ./test-results:/results
