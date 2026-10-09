@@ -17,12 +17,18 @@ models:
         description: Tenant identifier (tenant_a1, tenant_a2, tenant_b1, tenant_b2)
         tests:
           - not_null
+          - accepted_values:
+              values: ['tenant_a1', 'tenant_a2', 'tenant_b1', 'tenant_b2']
       - name: legacy_id
         description: Original ID from legacy system
         tests:
           - not_null
-      - name: name
-        description: Person name
+      - name: firstname
+        description: Person first name
+        tests:
+          - not_null
+      - name: surname
+        description: Person surname
         tests:
           - not_null
       - name: extra_field
