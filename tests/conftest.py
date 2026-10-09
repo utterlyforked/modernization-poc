@@ -2,7 +2,7 @@
 import json
 import os
 
-RESULTS_DIR = os.environ.get("TEST_RESULTS_DIR", "/results")
+RESULTS_DIR = os.environ.get("TEST_RESULTS_DIR", "test-results")
 _results = []
 
 
