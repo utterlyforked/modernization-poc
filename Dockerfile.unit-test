@@ -1,0 +1,16 @@
+# Self-contained unit test runner. Pairs with make test-unit; needs no network or other services.
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY tests/unit/requirements-test.txt /tmp/requirements-test.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-test.txt
+
+COPY pytest.ini /app/pytest.ini
+COPY tests/conftest.py /app/tests/conftest.py
+COPY tests/unit/ /app/tests/unit/
+COPY api/api.py /app/api/api.py
+COPY cdc-consumer/consumer.py /app/cdc-consumer/consumer.py
+
+ENV HOME=/tmp TEST_RESULTS_DIR=/results
+
+CMD ["pytest", "tests/unit", "-v", "--junitxml=/results/junit-unit.xml", "-p", "no:cacheprovider"]
