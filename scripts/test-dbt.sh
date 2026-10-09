@@ -9,6 +9,7 @@ export HOST_UID=${SUDO_UID:-$(id -u)} HOST_GID=${SUDO_GID:-$(id -g)}  # under su
 COMPOSE="docker compose -f docker-compose.dbt-test.yml"
 
 rm -rf test-results && mkdir -p test-results
+[ "$(id -u)" = 0 ] && chown "$HOST_UID:$HOST_GID" test-results
 $COMPOSE up --build --abort-on-container-exit --exit-code-from dbt-test
 status=$?
 

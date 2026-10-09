@@ -11,6 +11,7 @@ export HOST_UID=${SUDO_UID:-$(id -u)} HOST_GID=${SUDO_GID:-$(id -g)}  # under su
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.e2e-test.yml"
 
 mkdir -p test-results
+[ "$(id -u)" = 0 ] && chown "$HOST_UID:$HOST_GID" test-results
 $COMPOSE up -d --build --remove-orphans $($COMPOSE config --services | grep -v -E '^(e2e-test|debezium-init)$') debezium-init || exit 1
 
 status=0
