@@ -27,7 +27,11 @@ stack_up() {
   $COMPOSE up -d --build --remove-orphans $($COMPOSE config --services | grep -v -E '^(e2e-test|debezium-init)$') debezium-init
 }
 
+# stack_down <suite>: save container state and logs to test-results/stack-<suite>.log, then tear the stack down.
 stack_down() {
+  local log="test-results/stack-${1:-e2e}.log"
+  { $COMPOSE ps -a; $COMPOSE logs --no-color --timestamps; } >"$log" 2>&1
+  [ "$(id -u)" = 0 ] && chown "$HOST_UID:$HOST_GID" "$log"
   if [ -z "${KEEP_STACK:-}" ]; then
     $COMPOSE down -v --remove-orphans >/dev/null 2>&1
   fi

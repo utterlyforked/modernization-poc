@@ -4,7 +4,8 @@
 # (test_<scenario>__arrange / __during / __verify); this script runs a phase in the e2e-test container and does the
 # stopping/starting of containers between phases. Phases hand data to each other via test-results/resilience-state.json.
 # A scenario whose arrange or during phase fails still gets its containers restarted, and the verify phase still runs.
-# Reports: test-results/junit-resilience-<scenario>-<phase>.xml and summary-resilience-<scenario>-<phase>.json.
+# Reports: test-results/junit-resilience-<scenario>-<phase>.xml and summary-resilience-<scenario>-<phase>.json,
+# plus stack-resilience.log (docker compose ps + all container logs).
 # Set KEEP_STACK=1 to leave the stack running. Exit code 0 only if every phase passes.
 set -uo pipefail
 source "$(dirname "$0")/e2e-lib.sh"
@@ -12,7 +13,7 @@ source "$(dirname "$0")/e2e-lib.sh"
 STOPPED=()
 cleanup() {
   [ ${#STOPPED[@]} -gt 0 ] && $COMPOSE start "${STOPPED[@]}" >/dev/null 2>&1
-  stack_down
+  stack_down resilience
 }
 trap cleanup EXIT
 
