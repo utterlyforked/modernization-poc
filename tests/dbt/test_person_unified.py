@@ -80,3 +80,35 @@ def test_dbt_fails_on_duplicate_key(seeded):
     assert dbt("test").returncode != 0
     failed = failed_dbt_tests()
     assert any("person_unique_tenant_legacy_id" in t for t in failed), failed
+
+
+def stage(db, rows):
+    with db.cursor() as cur:
+        for operation, firstname, city in rows:
+            cur.execute(
+                "INSERT INTO person_staging (tenant_id, source_id, source_table, operation, firstname, surname, city) "
+                "VALUES ('tenant_a1', 7, 'person', %s, %s, 'Dupe', %s)", (operation, firstname, city))
+
+
+def test_two_events_for_one_key_in_one_batch_apply_the_latest(seeded):
+    stage(seeded, [("INSERT", "Before", "Old"), ("UPDATE", "After", "New")])
+    result = dbt("run")
+    assert result.returncode == 0, result.stdout
+    with seeded.cursor() as cur:
+        cur.execute("SELECT firstname, city FROM person WHERE tenant_id = 'tenant_a1' AND legacy_id = 7")
+        assert cur.fetchall() == [("After", "New")]
+
+
+def test_duplicate_events_for_an_existing_key_apply_the_latest_and_keep_modernized_only(seeded):
+    with seeded.cursor() as cur:
+        cur.execute("UPDATE person SET modernized_only = '2024-05-01' WHERE tenant_id = 'tenant_a1' AND legacy_id = 1")
+        cur.execute("UPDATE person_staging SET processed = TRUE")
+        for firstname in ("Edit1", "Edit2", "Edit3"):
+            cur.execute(
+                "INSERT INTO person_staging (tenant_id, source_id, source_table, operation, firstname, surname) "
+                "VALUES ('tenant_a1', 1, 'person', 'UPDATE', %s, 'Archer')", (firstname,))
+    result = dbt("run")
+    assert result.returncode == 0, result.stdout
+    with seeded.cursor() as cur:
+        cur.execute("SELECT firstname, modernized_only::text FROM person WHERE tenant_id = 'tenant_a1' AND legacy_id = 1")
+        assert cur.fetchall() == [("Edit3", "2024-05-01")]

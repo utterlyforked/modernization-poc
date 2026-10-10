@@ -9,6 +9,8 @@
 
 -- Incremental dbt model: merge staging to person
 -- Preserves modernized_only field during updates
+-- A batch can hold several events for one (tenant_id, source_id); only the latest (highest staging id) is applied,
+-- otherwise the same key twice in one insert fails on person_tenant_id_legacy_id_key and wedges every later run.
 
 WITH staging_records AS (
     SELECT
@@ -21,7 +23,8 @@ WITH staging_records AS (
         -- Map data_2 (Legacy A) or data_c (Legacy B) to extra_field
         COALESCE(data_2, data_c) as extra_field,
         created_at,
-        CURRENT_TIMESTAMP as synced_at
+        CURRENT_TIMESTAMP as synced_at,
+        row_number() OVER (PARTITION BY tenant_id, source_id ORDER BY id DESC) as rn
     FROM person_staging
     WHERE processed = FALSE
 )
@@ -48,3 +51,4 @@ FROM staging_records s
     LEFT JOIN {{ this }} p
     ON s.tenant_id = p.tenant_id AND s.legacy_id = p.legacy_id
 {% endif %}
+WHERE s.rn = 1
