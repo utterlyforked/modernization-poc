@@ -35,7 +35,7 @@ def wait_until(fn, timeout=SYNC_TIMEOUT, interval=0.5, desc="condition"):
             result = fn()
             if result:
                 return result
-        except requests.RequestException as e:
+        except (requests.RequestException, psycopg2.OperationalError) as e:
             last_error = e
         if time.monotonic() >= deadline:
             raise AssertionError(f"Timed out after {timeout}s waiting for {desc}"
@@ -92,6 +92,42 @@ def connectors_running():
     return True
 
 
+SEED_ROWS = 8  # two rows per legacy DB, from the init scripts
+QUIET_SECONDS = 15  # no new staged rows for this long
+
+
+def staging_state():
+    """(rows ever staged, rows not yet processed by dbt)."""
+    conn = connect_new_system()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute("SELECT count(*), count(*) FILTER (WHERE NOT processed) FROM person_staging")
+            return cur.fetchone()
+    finally:
+        conn.close()
+
+
+def wait_for_quiet_staging():
+    """Wait until the seed rows are staged and dbt-processed and staging has been unchanged for QUIET_SECONDS.
+
+    Connectors report RUNNING before the initial snapshot is consumed (the consumer sleeps 30s at start-up); starting
+    tests earlier would mix their events into the seed batch.
+    """
+    quiet = {"since": None, "last": None}
+
+    def settled():
+        total, pending = staging_state()
+        if (total, pending) != quiet["last"]:
+            quiet["last"], quiet["since"] = (total, pending), time.monotonic()
+        return total >= SEED_ROWS and pending == 0 and time.monotonic() - quiet["since"] >= QUIET_SECONDS
+
+    try:
+        wait_until(settled, SETTLE_TIMEOUT, interval=1, desc=f"staging settled (>= {SEED_ROWS} rows, none pending, "
+                                                             f"unchanged for {QUIET_SECONDS}s)")
+    except AssertionError as e:
+        raise AssertionError(f"{e}; last (staged, pending) = {quiet['last']}") from None
+
+
 class Api:
     def __init__(self, base_url):
         self.base_url = base_url
@@ -141,6 +177,7 @@ def stack_ready():
 
     wait_until(api_healthy, SETTLE_TIMEOUT, desc="API /api/health")
     wait_until(connectors_running, SETTLE_TIMEOUT, desc="all Debezium connectors RUNNING")
+    wait_for_quiet_staging()
 
 
 @pytest.fixture(scope="session")

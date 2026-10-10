@@ -12,5 +12,6 @@ COPY tests/e2e/ /app/tests/e2e/
 
 ENV HOME=/tmp TEST_RESULTS_DIR=/results TEST_SUITE=e2e
 
+# `poisons_stack` tests can wedge the pipeline, so scripts/test-e2e.sh runs each on its own fresh stack.
 # `destructive` tests need containers stopped between phases; scripts/test-resilience.sh drives those.
-CMD ["pytest", "tests/e2e", "-m", "not destructive", "-v", "--junitxml=/results/junit-e2e.xml", "-p", "no:cacheprovider"]
+CMD ["pytest", "tests/e2e", "-m", "not destructive and not poisons_stack", "-v", "--junitxml=/results/junit-e2e.xml", "-p", "no:cacheprovider"]

@@ -23,7 +23,7 @@ back via CDC. Web UI on :8000, Debezium REST on :8083. README.md has the full ar
 | `make logs SERVICE=cdc-consumer`, `make ps`, `make debug` | Inspect the running stack |
 | `make test-unit` | Unit tests (`tests/unit`), no network, no stack |
 | `make test-dbt` | dbt model tests (`tests/dbt`) against a throwaway Postgres |
-| `make test-e2e` | `tests/e2e` minus `destructive`; brings up its own stack (project `modernization-poc-e2e`) and tears it down |
+| `make test-e2e` | `tests/e2e` minus `destructive`/`poisons_stack`; brings up its own stack (project `modernization-poc-e2e`) and tears it down. `poisons_stack` tests then run one each on a fresh stack |
 | `make test-resilience` | Phased container-stopping scenarios (`tests/e2e/test_resilience.py`), driven by `scripts/test-resilience.sh` |
 | `make test` | All four suites; runs all, fails if any failed |
 
@@ -36,6 +36,7 @@ keeps the e2e stack up; `E2E_RUNS=2` repeats the e2e suite. Reports: `test-resul
   `docker-compose.e2e-test.yml`; runners are `scripts/test-*.sh`, e2e ones share `scripts/e2e-lib.sh`.
 - `tests/conftest.py` writes the per-suite summary (`TEST_SUITE` env). `pytest.ini` has the markers (`e2e`, `slow`,
   `destructive`) and a 60s default timeout.
+- `stack_ready` (autouse) waits for API, connectors and quiet staging (seed rows processed, unchanged 15s) so tests start on a settled stack. A failed dbt batch is retried forever and wedges the stack, hence `poisons_stack`.
 - e2e helpers live in `tests/e2e/conftest.py` (`wait_until`, `wait_for_person`, `Api`, direct DB connections on the compose
   network). Tests use unique surnames and never assume an empty DB; they only poll, never sleep for correctness.
 - Resilience scenarios are phases `test_<scenario>__arrange|during|verify`; the script stops/starts containers between them
