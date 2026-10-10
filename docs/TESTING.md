@@ -1,5 +1,29 @@
 # Testing Guide - Docker Multi-Container Setup
 
+## Automated tests
+
+Everything runs in Docker; the host only needs Docker, compose and make. Reports go to `test-results/`.
+
+```bash
+make test-unit        # unit tests, no stack needed
+make test-dbt         # dbt model tests against a throwaway Postgres
+make down             # the e2e suites need the dev stack stopped
+make test-e2e         # e2e tests; brings up and tears down its own stack
+make test-resilience  # stops containers mid-flight (own stack)
+make test             # all four suites
+```
+
+CI (`.github/workflows/test.yml`) runs unit, dbt and e2e on every push and pull request, and uploads `test-results/`
+(JUnit XML, summaries, stack logs) as an artifact.
+
+The rest of this guide is a manual runbook for exploring the running stack (`make up`). The commands use
+`docker exec -it`, which needs a terminal. In scripts or CI, drop the `-t` (use `docker exec -i`, or plain
+`docker exec`), otherwise they fail with "the input device is not a TTY". `scripts/debug.sh` already does this.
+
+---
+
+# Manual Testing Guide
+
 This guide helps you validate that all components are working correctly.
 
 ## Pre-Flight Checks
@@ -85,10 +109,10 @@ docker compose logs cdc-consumer | tail -20
 
 # Check staging table
 docker exec -it postgres-new-system psql -U newuser -d new_system -c \
-  "SELECT tenant_id, source_id, firstname, surname, extra_field FROM person_staging ORDER BY created_at DESC LIMIT 5;"
+  "SELECT tenant_id, source_id, firstname, surname, data_1, data_2, data_3, data_a, data_b, data_c FROM person_staging ORDER BY created_at DESC LIMIT 5;"
 ```
 
-**Expected:** Records from Kafka should appear in person_staging
+**Expected:** Records from Kafka should appear in person_staging. Staging keeps the raw source columns (`data_1..3` for Legacy A, `data_a..c` for Legacy B); `extra_field` only exists in `person`, after dbt.
 
 ### Test 3: dbt Transformation (Staging to Final)
 

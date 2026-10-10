@@ -1,0 +1,45 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-unit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-unit
+          path: test-results/
+          if-no-files-found: ignore
+
+  dbt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-dbt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-dbt
+          path: test-results/
+          if-no-files-found: ignore
+
+  # make test-e2e builds and starts the stack, waits for readiness (stack_ready fixture), runs tests/e2e,
+  # saves all container logs to test-results/stack-e2e*.log and tears the stack down with volumes.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-e2e
+          path: test-results/
+          if-no-files-found: ignore
