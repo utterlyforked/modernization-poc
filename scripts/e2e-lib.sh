@@ -23,6 +23,15 @@ preflight() {
   fi
 }
 
+# run_logged <logfile> <command...>: run a command, copy its output to test-results/<logfile>, return its exit code.
+run_logged() {
+  local log="test-results/$1"; shift
+  "$@" 2>&1 | tee -a "$log"
+  local rc=${PIPESTATUS[0]}
+  [ "$(id -u)" = 0 ] && chown "$HOST_UID:$HOST_GID" "$log"
+  return $rc
+}
+
 stack_up() {
   $COMPOSE up -d --build --remove-orphans $($COMPOSE config --services | grep -v -E '^(e2e-test|debezium-init)$') debezium-init
 }

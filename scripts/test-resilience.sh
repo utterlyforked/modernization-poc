@@ -5,7 +5,7 @@
 # stopping/starting of containers between phases. Phases hand data to each other via test-results/resilience-state.json.
 # A scenario whose arrange or during phase fails still gets its containers restarted, and the verify phase still runs.
 # Reports: test-results/junit-resilience-<scenario>-<phase>.xml and summary-resilience-<scenario>-<phase>.json,
-# plus stack-resilience.log (docker compose ps + all container logs).
+# plus resilience-run.log (test output) and stack-resilience.log (docker compose ps + all container logs).
 # Set KEEP_STACK=1 to leave the stack running. Exit code 0 only if every phase passes.
 set -uo pipefail
 source "$(dirname "$0")/e2e-lib.sh"
@@ -24,7 +24,7 @@ phase() {
   echo "--- $1 :: $2 ---"
   local skip_ready=""
   [ "$2" != arrange ] && skip_ready=1  # only arrange runs on a healthy stack; later phases deal with the damage themselves
-  $COMPOSE run --rm -e TEST_SUITE="resilience-$1-$2" -e E2E_SKIP_READY="$skip_ready" e2e-test \
+  run_logged resilience-run.log $COMPOSE run -T --rm -e TEST_SUITE="resilience-$1-$2" -e E2E_SKIP_READY="$skip_ready" e2e-test \
     pytest "tests/e2e/test_resilience.py::test_$1__$2" -m destructive -v -p no:cacheprovider \
     --junitxml="/results/junit-resilience-$1-$2.xml" || status=1
 }
@@ -34,12 +34,12 @@ hold() { STOPPED=("$@"); $COMPOSE stop "$@" || status=1; }
 release() { $COMPOSE start "${STOPPED[@]}" || status=1; STOPPED=(); }
 
 prepare_results
-rm -f test-results/resilience-state.json
+rm -f test-results/resilience-state.json test-results/resilience-run.log
 preflight || exit 1
 stack_up || exit 1
 
 # Wait for the pipeline itself (API, connectors) before the first scenario.
-$COMPOSE run --rm -e TEST_SUITE=resilience-ready e2e-test \
+run_logged resilience-run.log $COMPOSE run -T --rm -e TEST_SUITE=resilience-ready e2e-test \
   pytest tests/e2e/test_resilience.py::test_pipeline_ready -m destructive -q -p no:cacheprovider || { echo "Stack never became ready" >&2; exit 1; }
 
 # 1. cdc-consumer stopped while rows are written to legacy; they must arrive after it restarts.
