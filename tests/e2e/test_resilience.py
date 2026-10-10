@@ -121,9 +121,6 @@ def test_new_system_down__during(api, unique_surname, state):
     time.sleep(10)  # give the consumer time to try to stage it and fail
 
 
-@pytest.mark.xfail(strict=True, reason="issue #4: after the new-system DB restarts the consumer keeps its dead connection "
-                   "('connection already closed' / 'server closed the connection unexpectedly') and stages nothing "
-                   "until it is restarted by hand (stack-resilience.log; the row arrives after the restart)")
 def test_new_system_down__verify(api, state):
     """Pass => consumer reconnects by itself. Fail => it holds a dead connection and needs a manual restart."""
     wait_until(lambda: requests.get(f"{api.base_url}/api/persons", timeout=5).ok, SETTLE_TIMEOUT,

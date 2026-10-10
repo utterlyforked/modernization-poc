@@ -12,5 +12,6 @@ try:
 except ImportError:
     stub = types.ModuleType("confluent_kafka")
     stub.Consumer = object
+    stub.TopicPartition = lambda topic, partition, offset: (topic, partition, offset)
     stub.KafkaError = type("KafkaError", (), {"_PARTITION_EOF": -191})
     sys.modules["confluent_kafka"] = stub

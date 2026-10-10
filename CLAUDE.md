@@ -45,8 +45,9 @@ keeps the e2e stack up; `E2E_RUNS=2` repeats the e2e suite. Reports: `test-resul
 ## Gotchas
 - API dates serialise as RFC 822 (`Wed, 01 May 2024 ...`); use `as_date()` in tests.
 - Consumer sleeps 30s at start-up and runs dbt at most once a second when idle; settle timeouts are generous for that.
-- Known/suspected pipeline bugs (issue #4): DELETE events lost (`after` is null in `stage_record`), consumer swallows DB
-  errors then commits offsets, no reconnect after the new-system DB restarts, duplicate keys in one dbt batch can break the
+- Known/suspected pipeline bugs (issue #4): DELETE events lost (`after` is null, so they are dead-lettered into
+  `person_dead_letter`, not applied), no reconnect after the new-system DB restarts (issue #12 changed the consumer to retry
+  and reconnect on DB errors; the xfail may now XPASS), duplicate keys in one dbt batch can break the
   incremental model (and stall all later runs). Confirmed ones are `xfail(strict=True)` with reasons.
 
 ## Workflow

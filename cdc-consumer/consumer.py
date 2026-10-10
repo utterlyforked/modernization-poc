@@ -8,7 +8,7 @@ import os
 import json
 import time
 import subprocess
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, TopicPartition
 import psycopg2
 from psycopg2.extras import execute_values
 
@@ -38,6 +38,10 @@ TENANT_MAPPING = {
     'legacy_b2.public.person': 'tenant_b2'
 }
 
+
+# Errors that say the database (not the message) is the problem: the message is retried, never skipped.
+TRANSIENT_DB_ERRORS = (psycopg2.OperationalError, psycopg2.InterfaceError)
+RETRY_DELAY = 5  # seconds before a failed message is retried
 
 OPERATION_MAP = {'c': 'INSERT', 'u': 'UPDATE', 'd': 'DELETE', 'r': 'INSERT'}
 
@@ -116,14 +120,39 @@ class CDCConsumer:
             try:
                 self.db_conn = psycopg2.connect(**DB_CONFIG)
                 print("✅ Connected to new system database", flush=True)
+                self.ensure_dead_letter_table()
                 break
             except Exception as e:
                 print(f"❌ Failed to connect to database: {e}", flush=True)
                 print("Retrying in 5 seconds...", flush=True)
                 time.sleep(5)
 
+    def ensure_dead_letter_table(self):
+        """Create the table that keeps messages which can never be staged"""
+        cursor = self.db_conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS person_dead_letter (
+                id SERIAL PRIMARY KEY,
+                topic VARCHAR(200) NOT NULL,
+                kafka_partition INTEGER NOT NULL,
+                kafka_offset BIGINT NOT NULL,
+                raw_value TEXT,
+                error TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.db_conn.commit()
+        cursor.close()
+
+    def reconnect_db(self):
+        try:
+            self.db_conn.close()
+        except Exception:
+            pass
+        self.connect_db()
+
     def stage_record(self, tenant_id, after, operation):
-        """Stage a record in person_staging table"""
+        """Stage a record in person_staging table. Raises if the record could not be staged."""
         try:
             cursor = self.db_conn.cursor()
 
@@ -157,8 +186,36 @@ class CDCConsumer:
             print(f"✅ Staged record: tenant={tenant_id}, id={after.get('id')}, name={after.get('firstname')} {after.get('surname')}", flush=True)
 
         except Exception as e:
-            print(f"Error staging record: {e}")
+            print(f"Error staging record: {e}", flush=True)
             self.db_conn.rollback()
+            raise
+
+    def dead_letter(self, msg, error):
+        """Keep a message that can never be staged, so it is not lost when its offset is committed"""
+        raw = msg.value()
+        if isinstance(raw, bytes):
+            raw = raw.decode('utf-8', errors='replace')
+        try:
+            cursor = self.db_conn.cursor()
+            cursor.execute(
+                "INSERT INTO person_dead_letter (topic, kafka_partition, kafka_offset, raw_value, error) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (msg.topic(), msg.partition(), msg.offset(), raw, f"{type(error).__name__}: {error}"))
+            self.db_conn.commit()
+            cursor.close()
+        except Exception:
+            self.db_conn.rollback()
+            raise
+        print(f"☠️  Dead-lettered {msg.topic()}[{msg.partition()}]@{msg.offset()}: {error}", flush=True)
+
+    def retry_later(self, msg):
+        """Rewind to a message that was not committed, so it is delivered again after a pause"""
+        time.sleep(RETRY_DELAY)
+        try:
+            self.db_conn.rollback()
+        except Exception:
+            self.reconnect_db()
+        self.consumer.seek(TopicPartition(msg.topic(), msg.partition(), msg.offset()))
 
     def run_dbt_transformation(self):
         """Run dbt to transform staging -> final tables"""
@@ -216,7 +273,8 @@ class CDCConsumer:
                         print(f"Consumer error: {msg.error()}")
                         continue
 
-                # Process message
+                # Process message. The offset is committed only once the message is staged or dead-lettered;
+                # anything else rewinds to it and retries.
                 try:
                     print(f"📨 Received message from topic: {msg.topic()}", flush=True)
 
@@ -226,26 +284,33 @@ class CDCConsumer:
                         print("⚠️  Message value is None, skipping", flush=True)
                         continue
 
-                    event = parse_event(msg.topic(), value)
+                    try:
+                        event = parse_event(msg.topic(), value)
 
-                    if event is None:
-                        print(f"❌ Unknown topic: {msg.topic()}", flush=True)
-                        continue
+                        if event is None:
+                            print(f"❌ Unknown topic: {msg.topic()}", flush=True)
+                            continue
 
-                    tenant_id, operation, row = event
+                        tenant_id, operation, row = event
 
-                    # Stage the record
-                    self.stage_record(tenant_id, row, operation)
-                    staged_count += 1
+                        # Stage the record
+                        self.stage_record(tenant_id, row, operation)
+                        staged_count += 1
+                    except TRANSIENT_DB_ERRORS:
+                        raise
+                    except Exception as e:
+                        # The message itself is bad (unparseable, DELETE with no row, value the table rejects)
+                        self.dead_letter(msg, e)
 
                     # Commit offset
                     self.consumer.commit(msg)
 
                 except Exception as e:
-                    print(f"❌ Error processing message: {e}", flush=True)
+                    print(f"❌ Error processing message, will retry: {e}", flush=True)
                     print(f"Message value type: {type(msg.value())}", flush=True)
                     import traceback
                     traceback.print_exc()
+                    self.retry_later(msg)
 
         except KeyboardInterrupt:
             print("Shutting down consumer...")
