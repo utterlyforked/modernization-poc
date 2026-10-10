@@ -610,6 +610,42 @@
             background: #357abd;
             border-color: #2a5f8f;
         }
+
+        /* Pipeline activity pane (docked at the bottom) */
+        #pipelineSpacer { height: 48px; }
+        #pipelineSpacer.expanded { height: 340px; }
+        #pipelinePane {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+            background: #0d1233; border-top: 1px solid var(--accent-blue);
+            font-size: 13px; display: flex; flex-direction: column;
+        }
+        #pipelinePane.expanded { height: 340px; }
+        .pp-header { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 8px 16px; cursor: pointer; }
+        .pp-title { font-weight: 700; color: var(--accent-blue); }
+        .pp-badge { background: var(--legacy-red); color: #fff; border-radius: 10px; padding: 1px 8px; font-weight: 700; }
+        .pp-badge.zero { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
+        .pp-stat { color: var(--text-secondary); }
+        .pp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; background: var(--legacy-red); }
+        .pp-dot.RUNNING { background: var(--success); }
+        .pp-dot.PAUSED, .pp-dot.STOPPED { background: #f5a623; }
+        .pp-controls { display: none; gap: 8px; padding: 4px 16px 8px; align-items: center; }
+        #pipelinePane.expanded .pp-controls { display: flex; }
+        .pp-controls select, .pp-controls input, .pp-controls button {
+            background: rgba(255,255,255,0.08); color: var(--text-primary); border: 1px solid var(--border);
+            border-radius: 6px; padding: 4px 8px; font-size: 12px; width: auto; margin: 0; text-transform: none; letter-spacing: 0; font-weight: 400;
+        }
+        .pp-controls input { width: 220px; }
+        #ppList { display: none; flex: 1; overflow-y: auto; font-family: monospace; }
+        #pipelinePane.expanded #ppList { display: block; }
+        .pp-row { padding: 3px 16px; border-left: 3px solid transparent; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .pp-row:hover { background: rgba(255,255,255,0.05); }
+        .pp-row.info { border-left-color: var(--success); }
+        .pp-row.warn { border-left-color: #f5a623; color: #f5a623; }
+        .pp-row.error { border-left-color: var(--legacy-red); color: #ff8a95; background: rgba(255,71,87,0.08); }
+        .pp-time, .pp-tenant { color: var(--text-secondary); margin-right: 10px; }
+        .pp-stage { background: rgba(139,92,246,0.3); color: #fff; border-radius: 4px; padding: 0 6px; margin-right: 10px; font-size: 11px; }
+        .pp-detail { margin: 4px 0 4px 20px; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: 6px; white-space: pre-wrap; word-break: break-all; color: var(--text-primary); }
+        .pp-detail a { color: var(--accent-blue); }
     </style>
 </head>
 <body>
@@ -1083,6 +1119,33 @@
         </div>
     </div>
 
+    <div id="pipelineSpacer" class="expanded"></div>
+    <div id="pipelinePane" class="expanded">
+        <div class="pp-header" onclick="togglePipelinePane()">
+            <span class="pp-title">&#9654; Pipeline activity</span>
+            <span id="ppErrorBadge" class="pp-badge zero" title="Errors since the stack started">0 errors</span>
+            <span id="ppConnectors" class="pp-stat">connectors: ?</span>
+            <span id="ppConsumer" class="pp-stat">consumer: ?</span>
+            <span id="ppBacklog" class="pp-stat">backlog: ?</span>
+            <span id="ppDeadLetters" class="pp-stat">dead-lettered: ?</span>
+            <span id="ppRate" class="pp-stat">events/min: ?</span>
+        </div>
+        <div class="pp-controls">
+            <button id="ppPause" onclick="togglePipelinePause()">Pause</button>
+            <button onclick="clearPipelineView()">Clear</button>
+            <select id="ppTenant" onchange="renderPipelineEvents()">
+                <option value="">all tenants</option>
+                <option>tenant_a1</option><option>tenant_a2</option><option>tenant_b1</option><option>tenant_b2</option>
+            </select>
+            <select id="ppSeverity" onchange="renderPipelineEvents()">
+                <option value="">all severities</option>
+                <option>info</option><option>warn</option><option>error</option>
+            </select>
+            <input id="ppSearch" type="search" placeholder="search (e.g. tenant_a1 person#42)" oninput="renderPipelineEvents()">
+        </div>
+        <div id="ppList"></div>
+    </div>
+
     <script>
         const API_BASE = 'http://localhost:5000/api';
 
@@ -1416,6 +1479,106 @@
                 closeLegacyBModal();
             }
         });
+
+        // ---- Pipeline activity pane ----
+        const PP_MAX_EVENTS = 1000;
+        let ppEvents = [];          // oldest first
+        let ppLastId = 0;
+        let ppPaused = false;
+        let ppClearedBefore = 0;    // clear is view-only: hides events up to this id
+        const ppExpanded = new Set();
+
+        function ppEscape(text) {
+            return String(text ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+
+        function togglePipelinePane() {
+            document.getElementById('pipelinePane').classList.toggle('expanded');
+            document.getElementById('pipelineSpacer').classList.toggle('expanded');
+        }
+
+        function togglePipelinePause() {
+            ppPaused = !ppPaused;
+            document.getElementById('ppPause').textContent = ppPaused ? 'Resume' : 'Pause';
+        }
+
+        function clearPipelineView() {
+            ppClearedBefore = ppLastId;
+            renderPipelineEvents();
+        }
+
+        function toggleEventDetail(id) {
+            if (!ppExpanded.delete(id)) ppExpanded.add(id);
+            renderPipelineEvents();
+        }
+
+        function traceRecord(tenant, legacyId) {
+            document.getElementById('ppSearch').value = `${tenant} person#${legacyId}`;
+            renderPipelineEvents();
+        }
+
+        function renderPipelineEvents() {
+            const tenant = document.getElementById('ppTenant').value;
+            const severity = document.getElementById('ppSeverity').value;
+            const search = document.getElementById('ppSearch').value.toLowerCase();
+            const list = document.getElementById('ppList');
+            const shown = ppEvents.filter(e => e.id > ppClearedBefore
+                && (!tenant || e.tenant_id === tenant)
+                && (!severity || e.severity === severity)
+                && (!search || `${e.tenant_id} ${e.stage} ${e.message}`.toLowerCase().includes(search)));
+            const oldHeight = list.scrollHeight;
+            const oldTop = list.scrollTop;
+            list.innerHTML = shown.slice().reverse().map(e => {
+                let detail = '';
+                if (ppExpanded.has(e.id)) {
+                    const trace = e.legacy_id != null
+                        ? ` &mdash; <a href="#" onclick="event.stopPropagation(); traceRecord('${ppEscape(e.tenant_id)}', ${Number(e.legacy_id)}); return false;">trace this record</a>` : '';
+                    detail = `<div class="pp-detail">${ppEscape(e.source)} event #${e.id}${trace}\n${ppEscape(JSON.stringify(e.detail, null, 2) ?? '')}</div>`;
+                }
+                return `<div class="pp-row ${ppEscape(e.severity)}" onclick="toggleEventDetail(${e.id})">`
+                    + `<span class="pp-time">${new Date(e.ts).toLocaleTimeString()}</span>`
+                    + `<span class="pp-tenant">${ppEscape(e.tenant_id || '-')}</span>`
+                    + `<span class="pp-stage">${ppEscape(e.stage)}</span>${ppEscape(e.message)}</div>${detail}`;
+            }).join('');
+            // Newest is on top: stay at the top, but keep the view steady if the user has scrolled down
+            if (oldTop > 0) list.scrollTop = oldTop + (list.scrollHeight - oldHeight);
+        }
+
+        async function pollPipelineEvents() {
+            if (ppPaused) return;
+            try {
+                const response = await fetch(`${API_BASE}/events?since_id=${ppLastId}&limit=200`);
+                const fresh = await response.json();
+                if (!Array.isArray(fresh) || fresh.length === 0) return;
+                ppEvents = ppEvents.concat(fresh).slice(-PP_MAX_EVENTS);
+                ppLastId = fresh[fresh.length - 1].id;
+                renderPipelineEvents();
+            } catch (e) { /* API unreachable; try again next tick */ }
+        }
+
+        async function pollPipelineStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/pipeline/status`);
+                const s = await response.json();
+                const badge = document.getElementById('ppErrorBadge');
+                badge.textContent = `${s.errors ?? '?'} errors`;
+                badge.classList.toggle('zero', !s.errors);
+                document.getElementById('ppConnectors').innerHTML = 'connectors: ' + Object.entries(s.connectors || {})
+                    .map(([name, state]) => `<span title="${ppEscape(name)}: ${ppEscape(state)}"><span class="pp-dot ${ppEscape(state)}"></span>${ppEscape(name.replace('legacy-', '').replace('-connector', ''))}</span>`).join(' ');
+                const last = s.last_consumer_activity ? new Date(s.last_consumer_activity) : null;
+                document.getElementById('ppConsumer').textContent = 'consumer last active: ' + (last ? last.toLocaleTimeString() : 'never');
+                document.getElementById('ppBacklog').textContent = `staging backlog: ${s.staging_backlog ?? '?'}`;
+                document.getElementById('ppDeadLetters').textContent = `dead-lettered: ${s.dead_letters ?? '?'}`;
+                document.getElementById('ppRate').textContent = `events/min: ${s.events_last_minute ?? '?'}`;
+            } catch (e) {
+                document.getElementById('ppConnectors').textContent = 'connectors: API unreachable';
+            }
+        }
+
+        setInterval(pollPipelineEvents, 1000);
+        setInterval(pollPipelineStatus, 3000);
+        pollPipelineEvents();
+        pollPipelineStatus();
     </script>
 </body>
 </html>

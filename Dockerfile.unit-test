@@ -9,6 +9,7 @@ COPY pytest.ini /app/pytest.ini
 COPY tests/conftest.py /app/tests/conftest.py
 COPY tests/unit/ /app/tests/unit/
 COPY api/api.py /app/api/api.py
+COPY web/index.html /app/web/index.html
 COPY cdc-consumer/consumer.py /app/cdc-consumer/consumer.py
 COPY shared/pipeline_events.py /app/shared/pipeline_events.py
 

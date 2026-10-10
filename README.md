@@ -238,6 +238,25 @@ You should see:
 
 ## Monitoring and Debugging
 
+### Pipeline Activity Pane
+
+The web UI (http://localhost:8000) has a pane docked at the bottom that shows what the pipeline is doing, newest
+first: API writes, each Kafka message received and staged, retries, dead-lettered messages, dbt runs and Debezium
+connector state changes. Click a row for its detail (topic/partition/offset, error text, the raw payload for dead
+letters) and a link to trace that record (`tenant person#id`) through the stages. The header shows the error count (still
+visible when the pane is collapsed), connector states, the staging backlog and dead-letter count. Controls: pause,
+clear (view only), tenant and severity filters, free-text search.
+
+Components cannot read container logs (they must not get Docker access), so they report their own events into the
+`pipeline_event` table of the new-system database (`shared/pipeline_events.py`). Writing an event is best effort: a
+failure is printed and swallowed and never affects staging or offset commits. The table is created on first use and
+pruned to 24 hours / 5000 rows. The UI polls the API once a second:
+
+```bash
+curl 'localhost:5000/api/events?since_id=0&limit=50&severity=warn,error&tenant=tenant_a1'   # oldest first
+curl localhost:5000/api/pipeline/status    # connector states, staging backlog, dead letters, error count
+```
+
 ### View Service Logs
 
 ```bash
