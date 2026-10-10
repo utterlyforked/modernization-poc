@@ -11,6 +11,6 @@ COPY tests/unit/ /app/tests/unit/
 COPY api/api.py /app/api/api.py
 COPY cdc-consumer/consumer.py /app/cdc-consumer/consumer.py
 
-ENV HOME=/tmp TEST_RESULTS_DIR=/results
+ENV HOME=/tmp TEST_RESULTS_DIR=/results TEST_SUITE=unit
 
 CMD ["pytest", "tests/unit", "-v", "--junitxml=/results/junit-unit.xml", "-p", "no:cacheprovider"]

@@ -1,8 +1,9 @@
-"""Writes test-results/summary.json (stable, flat schema) alongside the JUnit XML."""
+"""Writes test-results/summary-<TEST_SUITE>.json (stable, flat schema) alongside the JUnit XML."""
 import json
 import os
 
 RESULTS_DIR = os.environ.get("TEST_RESULTS_DIR", "test-results")
+SUITE = os.environ.get("TEST_SUITE", "tests")  # one summary per suite so `make test` does not overwrite them
 _results = []
 
 
@@ -29,7 +30,7 @@ def pytest_sessionfinish(session, exitstatus):
         "tests": _results,
     }
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    with open(os.path.join(RESULTS_DIR, "summary.json"), "w") as f:
+    with open(os.path.join(RESULTS_DIR, f"summary-{SUITE}.json"), "w") as f:
         json.dump(summary, f, indent=2)
     print(f"\nSUMMARY status={summary['status']} total={summary['total']} "
           f"passed={summary['passed']} failed={summary['failed']} skipped={summary['skipped']}")
