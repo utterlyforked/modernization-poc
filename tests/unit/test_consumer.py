@@ -1,9 +1,11 @@
 import json
+import types
 
 import psycopg2
 import pytest
 
 import consumer
+import pipeline_events
 from consumer import convert_date, parse_event
 
 
@@ -107,9 +109,22 @@ class FakeConn:
         self.rollbacks += 1
 
 
+class FakeEvents:
+    def __init__(self, error=None):
+        self.error = error
+        self.emitted = []
+
+    def emit(self, stage, message, **kwargs):
+        if self.error:
+            raise self.error
+        self.emitted.append((stage, kwargs.get("severity", "info"), message, kwargs))
+
+
 def make_consumer():
     c = consumer.CDCConsumer.__new__(consumer.CDCConsumer)  # skip Kafka/DB connect
     c.db_conn = FakeConn()
+    c.events = FakeEvents()
+    c.attempts = {}
     return c
 
 
@@ -174,7 +189,7 @@ class FakeKafka:
         pass
 
 
-def run_loop(msg, staging_error=None, dead_letter_error=None):
+def run_loop(msg, staging_error=None, dead_letter_error=None, events_error=None):
     """Run consume_messages() over one message; the staging insert (and optionally the dead-letter insert) fails."""
     c = make_consumer()
     c.db_conn.close = lambda: None
@@ -188,6 +203,7 @@ def run_loop(msg, staging_error=None, dead_letter_error=None):
             raise dead_letter_error
 
     c.db_conn.cur.execute = failing_execute
+    c.events.error = events_error
     c.consumer = FakeKafka([msg])
     c.consume_messages()
     return c
@@ -246,3 +262,94 @@ def test_offset_is_not_committed_when_dead_lettering_fails():
     c = run_loop(MSG, staging_error=psycopg2.DataError("bad"), dead_letter_error=psycopg2.OperationalError("down"))
     assert c.consumer.committed == []
     assert c.consumer.seeks == [("legacy_a1.public.person", 0, 7)]
+
+
+def stages(c):
+    return [(stage, severity) for stage, severity, _, _ in c.events.emitted]
+
+
+def test_staged_message_emits_received_then_staged_for_the_record():
+    c = run_loop(MSG)
+    assert stages(c) == [("consumer.received", "info"), ("consumer.staged", "info")]
+    _, _, message, kwargs = c.events.emitted[1]
+    assert message == "tenant_a1 person#1 INSERT staged"
+    assert (kwargs["tenant_id"], kwargs["legacy_id"]) == ("tenant_a1", 1)
+
+
+def test_database_failure_emits_a_retry_warning_with_attempt_count():
+    c = run_loop(MSG, staging_error=psycopg2.OperationalError("server closed the connection"))
+    assert stages(c) == [("consumer.received", "info"), ("consumer.retry", "warn")]
+    assert c.events.emitted[1][3]["detail"]["attempt"] == 1
+
+
+def test_dead_letter_emits_an_error_with_payload():
+    c = run_loop(MSG, staging_error=psycopg2.DataError("too long"))
+    assert ("consumer.dead_letter", "error") in stages(c)
+    detail = c.events.emitted[-1][3]["detail"]
+    assert "DataError" in detail["error"] and detail["offset"] == 7 and detail["raw_value"]
+
+
+@pytest.mark.parametrize("kwargs", [
+    {},
+    {"staging_error": psycopg2.DataError("bad")},
+])
+def test_event_write_failure_does_not_change_staging_or_offset_commits(kwargs):
+    expected = run_loop(MSG, **kwargs)
+    broken = run_loop(MSG, events_error=RuntimeError("pipeline_event does not exist"), **kwargs)
+    assert broken.consumer.committed == expected.consumer.committed == [MSG]
+    assert broken.consumer.seeks == expected.consumer.seeks == []
+    assert broken.db_conn.cur.calls == expected.db_conn.cur.calls
+    assert broken.db_conn.commits == expected.db_conn.commits
+
+
+def test_event_write_failure_does_not_stop_retry_rewind():
+    c = run_loop(MSG, staging_error=psycopg2.OperationalError("down"), events_error=RuntimeError("no table"))
+    assert c.consumer.committed == []
+    assert c.consumer.seeks == [("legacy_a1.public.person", 0, 7)]
+
+
+def test_dbt_failure_emits_an_error_event_with_output(monkeypatch):
+    c = make_consumer()
+    result = types.SimpleNamespace(returncode=1, stdout="Compilation Error", stderr="boom")
+    monkeypatch.setattr(consumer.subprocess, "run", lambda *a, **k: result)
+    c.run_dbt_transformation()
+    assert stages(c) == [("dbt", "info"), ("dbt", "error")]
+    assert c.events.emitted[-1][3]["detail"]["stdout"] == "Compilation Error"
+
+
+def test_dbt_success_emits_finished_event(monkeypatch):
+    c = make_consumer()
+    c.db_conn.cur.rowcount = 3
+    monkeypatch.setattr(consumer.subprocess, "run",
+                        lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="", stderr=""))
+    c.run_dbt_transformation()
+    assert stages(c) == [("dbt", "info"), ("dbt", "info")]
+    assert c.events.emitted[-1][3]["detail"]["rows"] == 3
+
+
+def test_event_writer_swallows_failures_and_backs_off(monkeypatch):
+    attempts = []
+
+    def failing_connect(**kwargs):
+        attempts.append(kwargs)
+        raise psycopg2.OperationalError("down")
+
+    monkeypatch.setattr(pipeline_events.psycopg2, "connect", failing_connect)
+    writer = pipeline_events.EventWriter({"host": "x"}, "test")
+    writer.emit("api", "one")
+    writer.emit("api", "two")  # within RETRY_INTERVAL: no second connection attempt
+    assert len(attempts) == 1
+
+
+def test_event_writer_inserts_and_prunes_to_bound_growth(monkeypatch):
+    conn = FakeConn()
+    conn.autocommit = False
+    monkeypatch.setattr(pipeline_events.psycopg2, "connect", lambda **kwargs: conn)
+    writer = pipeline_events.EventWriter({"host": "x"}, "test")
+    writer.emit("api", "hello", severity="warn", tenant_id="tenant_a1", legacy_id=4, detail={"k": "v"})
+    sqls = [sql for sql, _ in conn.cur.calls]
+    assert conn.autocommit is True
+    assert any("CREATE TABLE IF NOT EXISTS pipeline_event" in sql for sql in sqls)
+    insert = next(params for sql, params in conn.cur.calls if "INSERT INTO pipeline_event" in sql)
+    assert insert == ("test", "api", "warn", "tenant_a1", 4, "hello", '{"k": "v"}')
+    assert any("DELETE FROM pipeline_event" in sql for sql in sqls)
