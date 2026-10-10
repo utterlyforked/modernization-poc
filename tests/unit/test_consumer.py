@@ -128,3 +128,64 @@ def test_stage_record_with_none_row_rolls_back_without_raising():
     c.stage_record("tenant_a1", None, "DELETE")
     assert c.db_conn.rollbacks == 1
     assert c.db_conn.commits == 0
+
+
+class FakeMsg:
+    def __init__(self, topic, value):
+        self._topic, self._value = topic, value
+
+    def topic(self):
+        return self._topic
+
+    def value(self):
+        return self._value
+
+    def error(self):
+        return None
+
+
+class FakeKafka:
+    """Delivers the given messages, then raises KeyboardInterrupt to end consume_messages()."""
+    def __init__(self, msgs):
+        self.msgs = list(msgs)
+        self.committed = []
+
+    def poll(self, timeout=None):
+        if not self.msgs:
+            raise KeyboardInterrupt
+        return self.msgs.pop(0)
+
+    def commit(self, msg):
+        self.committed.append(msg)
+
+    def close(self):
+        pass
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "Issue #12: stage_record catches any DB error, rolls back and returns normally, and the main loop "
+    "then commits the offset anyway, so the event is lost with nothing to retry. "
+    "Expected: the offset is committed only after a successful stage."))
+def test_offset_is_not_committed_when_staging_fails():
+    c = make_consumer()
+    c.db_conn.close = lambda: None
+    c.db_conn.cur.execute = lambda sql, params=None: (_ for _ in ()).throw(
+        ValueError("value too long for type character varying(100)"))  # not a dead connection
+    msg = FakeMsg("legacy_a1.public.person", event("c", after={"id": 1, "firstname": "A"}))
+    c.consumer = FakeKafka([msg])
+
+    c.consume_messages()
+
+    assert c.db_conn.rollbacks == 1  # staging really did fail
+    assert c.consumer.committed == []
+
+
+def test_offset_is_committed_after_successful_staging():
+    c = make_consumer()
+    c.db_conn.close = lambda: None
+    msg = FakeMsg("legacy_a1.public.person", event("c", after={"id": 1, "firstname": "A"}))
+    c.consumer = FakeKafka([msg])
+
+    c.consume_messages()
+
+    assert c.consumer.committed == [msg]
