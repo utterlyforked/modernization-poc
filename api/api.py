@@ -3,12 +3,17 @@
 API Service - Handles reads from new system and write-through to legacy systems
 """
 
+import json
 import os
+import threading
 import time
+import urllib.request
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+from pipeline_events import EventWriter
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +26,11 @@ NEW_SYSTEM_DB = {
     'user': os.getenv('NEW_SYSTEM_DB_USER', 'newuser'),
     'password': os.getenv('NEW_SYSTEM_DB_PASS', 'newpass')
 }
+
+DEBEZIUM_URL = os.getenv('DEBEZIUM_URL', 'http://debezium:8083')
+CONNECTOR_POLL_INTERVAL = 3  # seconds between connector state checks
+
+events = EventWriter(NEW_SYSTEM_DB, 'api')
 
 LEGACY_DB_CONFIG = {
     'tenant_a1': {
@@ -61,6 +71,14 @@ LEGACY_DB_CONFIG = {
 def get_new_system_conn():
     """Get connection to new system database"""
     return psycopg2.connect(**NEW_SYSTEM_DB, cursor_factory=RealDictCursor)
+
+
+def emit(*args, **kwargs):
+    """Record a pipeline event for the UI. Best effort: must never affect a request."""
+    try:
+        events.emit(*args, **kwargs)
+    except Exception as e:
+        print(f"pipeline event not written: {e}", flush=True)
 
 
 def get_legacy_conn(tenant_id):
@@ -128,10 +146,13 @@ def create_person():
         extra_field = data.get('extra_field')
 
         if not tenant_id or not firstname or not surname:
+            emit('api', 'POST /api/persons rejected: tenant_id, firstname, and surname are required',
+                 severity='warn', tenant_id=tenant_id)
             return jsonify({'error': 'tenant_id, firstname, and surname are required'}), 400
 
         config = LEGACY_DB_CONFIG.get(tenant_id)
         if not config:
+            emit('api', f'POST /api/persons rejected: unknown tenant {tenant_id}', severity='warn')
             return jsonify({'error': f'Unknown tenant: {tenant_id}'}), 400
 
         # Write to legacy database
@@ -160,6 +181,8 @@ def create_person():
         cursor.close()
         conn.close()
 
+        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy', tenant_id=tenant_id,
+             legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'message': f'Written to {tenant_id} legacy system (ID: {legacy_id}). Will sync back via CDC.',
@@ -168,6 +191,7 @@ def create_person():
         })
 
     except Exception as e:
+        emit('api', f'POST /api/persons failed: {e}', severity='error', detail={'error': str(e)})
         return jsonify({'error': str(e)}), 500
 
 
@@ -180,10 +204,13 @@ def update_person():
         legacy_id = data.get('legacy_id')
 
         if not tenant_id or not legacy_id:
+            emit('api', 'PUT /api/persons rejected: tenant_id and legacy_id are required', severity='warn',
+                 tenant_id=tenant_id)
             return jsonify({'error': 'tenant_id and legacy_id are required'}), 400
 
         config = LEGACY_DB_CONFIG.get(tenant_id)
         if not config:
+            emit('api', f'PUT /api/persons rejected: unknown tenant {tenant_id}', severity='warn')
             return jsonify({'error': f'Unknown tenant: {tenant_id}'}), 400
 
         # Update in legacy database
@@ -236,12 +263,15 @@ def update_person():
             new_cursor.close()
             new_conn.close()
 
+        emit('api', f'{tenant_id} person#{legacy_id} UPDATE written to legacy', tenant_id=tenant_id,
+             legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'message': 'Updated in legacy system. Will sync back via CDC.'
         })
 
     except Exception as e:
+        emit('api', f'PUT /api/persons failed: {e}', severity='error', detail={'error': str(e)})
         return jsonify({'error': str(e)}), 500
 
 
@@ -324,12 +354,16 @@ def create_legacy_person(tenant_id):
         cursor.close()
         conn.close()
 
+        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy', tenant_id=tenant_id,
+             legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'legacy_id': legacy_id
         })
 
     except Exception as e:
+        emit('api', f'POST /api/legacy/{tenant_id}/persons failed: {e}', severity='error', tenant_id=tenant_id,
+             detail={'error': str(e)})
         return jsonify({'error': str(e)}), 500
 
 
@@ -429,16 +463,130 @@ def update_legacy_person(tenant_id, record_id):
         cursor.close()
         conn.close()
 
+        emit('api', f'{tenant_id} person#{record_id} UPDATE written to legacy', tenant_id=tenant_id,
+             legacy_id=record_id)
         return jsonify({'success': True})
 
     except Exception as e:
+        emit('api', f'PUT /api/legacy/{tenant_id}/persons/{record_id} failed: {e}', severity='error',
+             tenant_id=tenant_id, legacy_id=record_id, detail={'error': str(e)})
         return jsonify({'error': str(e)}), 500
+
+
+def connector_states():
+    """Debezium connector name -> state (RUNNING, FAILED, ...). Raises if Debezium cannot be reached."""
+    with urllib.request.urlopen(f'{DEBEZIUM_URL}/connectors?expand=status', timeout=2) as resp:
+        statuses = json.load(resp)
+    return {name: info['status']['connector']['state'] for name, info in sorted(statuses.items())}
+
+
+def monitor_connectors(states=connector_states, sleep=time.sleep, iterations=None):
+    """Emit a `connector` event whenever a connector (or Debezium itself) changes state."""
+    previous = {}
+    count = 0
+    while iterations is None or count < iterations:
+        count += 1
+        try:
+            current = states()
+        except Exception as e:
+            current = {'debezium': 'UNREACHABLE'}
+            detail = {'error': str(e)}
+        else:
+            detail = None
+        for name, state in current.items():
+            # a connector first seen RUNNING is not news
+            old = previous.get(name, 'RUNNING' if state == 'RUNNING' else None)
+            if state != old:
+                severity = 'info' if state == 'RUNNING' else 'error' if state in ('FAILED', 'UNREACHABLE') else 'warn'
+                emit('connector', f'{name}: {old or "unknown"} -> {state}', severity=severity,
+                     detail=detail or {'connector': name, 'from': old, 'to': state})
+        if 'debezium' not in current:
+            previous.pop('debezium', None)
+        previous.update(current)
+        sleep(CONNECTOR_POLL_INTERVAL)
+
+
+@app.route('/api/events', methods=['GET'])
+def get_events():
+    """Pipeline events, oldest first. `since_id` returns only newer events (for polling); without it, the newest."""
+    try:
+        since_id = request.args.get('since_id', default=0, type=int)
+        limit = min(max(request.args.get('limit', default=200, type=int), 1), 1000)
+        where, params = ['id > %s'], [since_id]
+        severities = [v for v in request.args.get('severity', '').split(',') if v]
+        if severities:
+            where.append('severity = ANY(%s)')
+            params.append(severities)
+        if request.args.get('tenant'):
+            where.append('tenant_id = %s')
+            params.append(request.args['tenant'])
+        # first page: the newest `limit` events; polling: everything after since_id
+        order = 'ASC' if since_id else 'DESC'
+
+        conn = get_new_system_conn()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"SELECT * FROM pipeline_event WHERE {' AND '.join(where)} ORDER BY id {order} LIMIT %s",
+                           params + [limit])
+            rows = cursor.fetchall()
+        except psycopg2.errors.UndefinedTable:
+            rows = []  # nothing has emitted an event yet
+        cursor.close()
+        conn.close()
+
+        if order == 'DESC':
+            rows.reverse()
+        for row in rows:
+            row['ts'] = row['ts'].isoformat()
+        return jsonify(rows)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/pipeline/status', methods=['GET'])
+def pipeline_status():
+    """Snapshot for the UI's status line. Each part degrades to null on its own."""
+    status = {'connectors': None, 'staging_backlog': None, 'dead_letters': None,
+              'last_consumer_activity': None, 'errors': None, 'events_last_minute': None}
+    try:
+        status['connectors'] = connector_states()
+    except Exception as e:
+        status['connectors'] = {'debezium': 'UNREACHABLE'}
+        status['connectors_error'] = str(e)
+
+    queries = {
+        'staging_backlog': "SELECT count(*) AS v FROM person_staging WHERE processed = FALSE",
+        'dead_letters': "SELECT count(*) AS v FROM person_dead_letter",
+        'last_consumer_activity': "SELECT max(ts) AS v FROM pipeline_event WHERE source = 'cdc-consumer'",
+        'errors': "SELECT count(*) AS v FROM pipeline_event WHERE severity = 'error'",
+        'events_last_minute': "SELECT count(*) AS v FROM pipeline_event WHERE ts > now() - interval '1 minute'",
+    }
+    try:
+        conn = get_new_system_conn()
+        conn.autocommit = True  # one missing table must not fail the other queries
+        cursor = conn.cursor()
+        for key, sql in queries.items():
+            try:
+                cursor.execute(sql)
+                value = cursor.fetchone()['v']
+                status[key] = value.isoformat() if hasattr(value, 'isoformat') else value
+            except psycopg2.Error:
+                pass
+        conn.close()
+    except Exception as e:
+        status['database_error'] = str(e)
+    return jsonify(status)
 
 
 if __name__ == '__main__':
     # Wait for databases to be ready
     print("Waiting for databases...")
     time.sleep(10)
+
+    # debug=True re-runs this script in a reloader child; only that one serves requests
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        threading.Thread(target=monitor_connectors, daemon=True).start()
 
     print("Starting API server on port 5000...")
     app.run(host='0.0.0.0', port=5000, debug=True)

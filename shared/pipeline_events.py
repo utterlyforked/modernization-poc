@@ -7,6 +7,7 @@ pipeline carries on.
 """
 
 import json
+import threading
 import time
 
 import psycopg2
@@ -44,6 +45,7 @@ class EventWriter:
         self.conn = None
         self.last_prune = 0
         self.next_attempt = 0
+        self.lock = threading.Lock()  # the api writes from several request threads
 
     def _connect(self):
         conn = psycopg2.connect(connect_timeout=3, **self.db_config)
@@ -55,6 +57,10 @@ class EventWriter:
 
     def emit(self, stage, message, severity='info', tenant_id=None, legacy_id=None, detail=None):
         """Record one event. Never raises."""
+        with self.lock:
+            self._emit(stage, message, severity, tenant_id, legacy_id, detail)
+
+    def _emit(self, stage, message, severity, tenant_id, legacy_id, detail):
         try:
             if self.conn is None:
                 if time.time() < self.next_attempt:

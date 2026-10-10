@@ -9,7 +9,8 @@ COPY pytest.ini /app/pytest.ini
 COPY tests/conftest.py /app/tests/conftest.py
 COPY tests/unit/ /app/tests/unit/
 COPY api/api.py /app/api/api.py
-COPY cdc-consumer/consumer.py cdc-consumer/pipeline_events.py /app/cdc-consumer/
+COPY cdc-consumer/consumer.py /app/cdc-consumer/consumer.py
+COPY shared/pipeline_events.py /app/shared/pipeline_events.py
 
 ENV HOME=/tmp TEST_RESULTS_DIR=/results TEST_SUITE=unit
 

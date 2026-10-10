@@ -309,9 +309,6 @@ class CDCConsumer:
                 # anything else rewinds to it and retries.
                 try:
                     print(f"📨 Received message from topic: {msg.topic()}", flush=True)
-                    self.emit('consumer.received', f"{msg.topic()}[{msg.partition()}]@{msg.offset()} received",
-                              tenant_id=TENANT_MAPPING.get(msg.topic()),
-                              detail={'topic': msg.topic(), 'partition': msg.partition(), 'offset': msg.offset()})
 
                     # Get message value
                     value = msg.value()
@@ -327,6 +324,11 @@ class CDCConsumer:
                             continue
 
                         tenant_id, operation, row = event
+                        self.emit('consumer.received',
+                                  f"{tenant_id} person#{(row or {}).get('id')} {operation} received",
+                                  tenant_id=tenant_id, legacy_id=(row or {}).get('id'),
+                                  detail={'operation': operation, 'topic': msg.topic(),
+                                          'partition': msg.partition(), 'offset': msg.offset()})
 
                         # Stage the record
                         self.stage_record(tenant_id, row, operation)
