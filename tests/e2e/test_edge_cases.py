@@ -38,7 +38,6 @@ def wait_for_cdc_barrier(api, tenant_id, surname):
 # --- 1. modernized_only ----------------------------------------------------------------------------------------
 
 @pytest.mark.poisons_stack
-@pytest.mark.xfail(strict=True, reason="issue #4: the PUT's write-through echoes back via CDC (~3s later) together with the legacy edit; same (tenant, legacy_id) twice in one dbt batch -> duplicate key on person, batch never marked processed (stack-e2e-isolated-1/2.log)")
 @pytest.mark.parametrize("tenant_id", ["tenant_a1", "tenant_b2"])
 def test_modernized_only_survives_legacy_update(api, unique_surname, tenant_id):
     legacy_id = create_synced(api, tenant_id, unique_surname)
@@ -53,7 +52,6 @@ def test_modernized_only_survives_legacy_update(api, unique_surname, tenant_id):
 
 
 @pytest.mark.poisons_stack
-@pytest.mark.xfail(strict=True, reason="issue #4: five PUT write-through echoes for one key are staged within ~5ms and share a dbt batch -> duplicate key on person (stack-e2e-isolated-3.log)")
 def test_modernized_only_survives_rapid_updates(api, unique_surname):
     tenant_id = "tenant_a2"
     legacy_id = create_synced(api, tenant_id, unique_surname)
@@ -111,14 +109,11 @@ def test_burst_of_inserts_all_reach_person(api, unique_surname):
 
 # --- 4. duplicate keys in one batch ----------------------------------------------------------------------------
 
-# These can wedge the pipeline: a dbt batch with the same key twice fails, its rows stay unprocessed, and every later batch
-# fails the same way (seen in a real run: nothing reached `person` after the first failure). They are excluded from the
-# shared-stack run (`poisons_stack`) and scripts/test-e2e.sh runs each one on its own fresh stack.
+# These used to wedge the pipeline (issue #16: a dbt batch with the same key twice failed and was retried forever; fixed by
+# keeping only the latest event per key in the model). They stay isolated (`poisons_stack`) so a regression cannot take
+# the shared stack down; scripts/test-e2e.sh runs each one on its own fresh stack.
 
 @pytest.mark.poisons_stack
-@pytest.mark.xfail(strict=True, reason="issue #4: two staged events for one (tenant, legacy_id) in one dbt batch hit "
-                   "'duplicate key value violates unique constraint person_tenant_id_legacy_id_key'; the batch is never "
-                   "marked processed and all later dbt runs fail (seen in stack-e2e.log, tenant_a1/3)")
 def test_insert_then_update_in_one_transaction_ends_with_update(api, unique_surname):
     """Create and update events for one key land in a single dbt batch."""
     conn = connect_legacy("tenant_a1")
@@ -133,9 +128,6 @@ def test_insert_then_update_in_one_transaction_ends_with_update(api, unique_surn
 
 
 @pytest.mark.poisons_stack
-@pytest.mark.xfail(strict=True, reason="issue #4: even two separate commits (API create + update) are staged within ~2ms "
-                   "and land in one dbt batch, hitting the same duplicate-key failure on person (seen in "
-                   "stack-e2e-isolated-2.log, tenant_a1/3)")
 def test_insert_then_quick_update_via_api_ends_with_update(api, unique_surname):
     """Same, but as two separate commits ~tens of ms apart, as the API would produce them."""
     legacy_id = api.create_legacy("tenant_a1", legacy_payload("tenant_a1", unique_surname, "first"))

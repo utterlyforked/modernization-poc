@@ -236,7 +236,8 @@ class CDCConsumer:
                 self.db_conn.commit()
                 cursor.close()
             else:
-                print(f"dbt transformation failed: {result.stderr}")
+                # dbt reports errors on stdout, so log the tail of both
+                print(f"dbt transformation failed:\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
 
         except Exception as e:
             print(f"Error running dbt: {e}")
