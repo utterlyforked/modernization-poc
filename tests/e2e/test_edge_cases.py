@@ -69,8 +69,8 @@ def test_modernized_only_survives_rapid_updates(api, unique_surname):
 
 # --- 2. DELETE events ------------------------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason="issue #4: DELETE events have a null `after`; stage_record fails with "
-                   "\"'NoneType' object has no attribute 'get'\" and the row stays in person (stack-e2e.log)")
+@pytest.mark.xfail(strict=True, reason="issue #4: DELETE events have a null `after`; staging fails with "
+                   "\"'NoneType' object has no attribute 'get'\", the event goes to person_dead_letter and the row stays in person")
 @pytest.mark.parametrize("tenant_id", ["tenant_a1", "tenant_b1"])
 def test_legacy_delete_removes_row_from_person(api, unique_surname, tenant_id):
     legacy_id = create_synced(api, tenant_id, unique_surname)

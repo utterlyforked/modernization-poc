@@ -1,5 +1,6 @@
 import json
 
+import psycopg2
 import pytest
 
 import consumer
@@ -123,8 +124,125 @@ def test_stage_record_inserts_converted_row():
     assert c.db_conn.commits == 1
 
 
-def test_stage_record_with_none_row_rolls_back_without_raising():
+def test_stage_record_with_none_row_rolls_back_and_raises():
     c = make_consumer()
-    c.stage_record("tenant_a1", None, "DELETE")
+    with pytest.raises(AttributeError):
+        c.stage_record("tenant_a1", None, "DELETE")
     assert c.db_conn.rollbacks == 1
     assert c.db_conn.commits == 0
+
+
+class FakeMsg:
+    def __init__(self, topic, value, partition=0, offset=7):
+        self._topic, self._value, self._partition, self._offset = topic, value, partition, offset
+
+    def topic(self):
+        return self._topic
+
+    def value(self):
+        return self._value
+
+    def partition(self):
+        return self._partition
+
+    def offset(self):
+        return self._offset
+
+    def error(self):
+        return None
+
+
+class FakeKafka:
+    """Delivers the given messages, then raises KeyboardInterrupt to end consume_messages()."""
+    def __init__(self, msgs):
+        self.msgs = list(msgs)
+        self.committed = []
+        self.seeks = []
+
+    def poll(self, timeout=None):
+        if not self.msgs:
+            raise KeyboardInterrupt
+        return self.msgs.pop(0)
+
+    def commit(self, msg):
+        self.committed.append(msg)
+
+    def seek(self, tp):
+        self.seeks.append(tp)
+
+    def close(self):
+        pass
+
+
+def run_loop(msg, staging_error=None, dead_letter_error=None):
+    """Run consume_messages() over one message; the staging insert (and optionally the dead-letter insert) fails."""
+    c = make_consumer()
+    c.db_conn.close = lambda: None
+    execute = c.db_conn.cur.execute
+
+    def failing_execute(sql, params=None):
+        execute(sql, params)
+        if staging_error and "INSERT INTO person_staging" in sql:
+            raise staging_error
+        if dead_letter_error and "person_dead_letter" in sql:
+            raise dead_letter_error
+
+    c.db_conn.cur.execute = failing_execute
+    c.consumer = FakeKafka([msg])
+    c.consume_messages()
+    return c
+
+
+@pytest.fixture(autouse=True)
+def no_retry_delay(monkeypatch):
+    monkeypatch.setattr(consumer.time, "sleep", lambda s: None)
+
+
+MSG = FakeMsg("legacy_a1.public.person", event("c", after={"id": 1, "firstname": "A"}))
+
+
+def dead_letter_inserts(c):
+    return [params for sql, params in c.db_conn.cur.calls if "person_dead_letter" in sql]
+
+
+def test_offset_is_committed_after_successful_staging():
+    c = run_loop(MSG)
+    assert c.consumer.committed == [MSG]
+    assert c.consumer.seeks == []
+    assert dead_letter_inserts(c) == []
+
+
+def test_offset_is_not_committed_when_the_database_fails():
+    c = run_loop(MSG, staging_error=psycopg2.OperationalError("server closed the connection"))
+    assert c.consumer.committed == []
+    assert c.consumer.seeks == [("legacy_a1.public.person", 0, 7)]  # rewound, will be delivered again
+    assert dead_letter_inserts(c) == []
+
+
+def test_unstageable_message_is_dead_lettered_then_committed():
+    c = run_loop(MSG, staging_error=psycopg2.DataError("value too long for type character varying(100)"))
+    (params,) = dead_letter_inserts(c)
+    assert params[:3] == ("legacy_a1.public.person", 0, 7)
+    assert "DataError" in params[4]
+    assert c.consumer.committed == [MSG]
+
+
+def test_delete_event_is_dead_lettered_not_silently_lost():
+    delete = FakeMsg("legacy_a1.public.person", event("d", after=None, before={"id": 5}))
+    c = run_loop(delete)
+    (params,) = dead_letter_inserts(c)
+    assert "AttributeError" in params[4]
+    assert c.consumer.committed == [delete]
+
+
+def test_unparseable_message_is_dead_lettered_then_committed():
+    junk = FakeMsg("legacy_a1.public.person", b"not json")
+    c = run_loop(junk)
+    assert dead_letter_inserts(c)[0][3] == "not json"
+    assert c.consumer.committed == [junk]
+
+
+def test_offset_is_not_committed_when_dead_lettering_fails():
+    c = run_loop(MSG, staging_error=psycopg2.DataError("bad"), dead_letter_error=psycopg2.OperationalError("down"))
+    assert c.consumer.committed == []
+    assert c.consumer.seeks == [("legacy_a1.public.person", 0, 7)]
