@@ -272,7 +272,7 @@ def test_staged_message_emits_received_then_staged_for_the_record():
     c = run_loop(MSG)
     assert stages(c) == [("consumer.received", "info"), ("consumer.staged", "info")]
     _, _, message, kwargs = c.events.emitted[1]
-    assert message == "tenant_a1 person#1 INSERT staged"
+    assert message == "tenant_a1 person#1 INSERT staged in new system (person_staging)"
     assert (kwargs["tenant_id"], kwargs["legacy_id"]) == ("tenant_a1", 1)
 
 
@@ -319,12 +319,14 @@ def test_dbt_failure_emits_an_error_event_with_output(monkeypatch):
 
 def test_dbt_success_emits_finished_event(monkeypatch):
     c = make_consumer()
-    c.db_conn.cur.rowcount = 3
+    c.db_conn.cur.fetchall = lambda: [("tenant_a1", 1), ("tenant_a1", 2), ("tenant_b2", 7)]
     monkeypatch.setattr(consumer.subprocess, "run",
                         lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="", stderr=""))
     c.run_dbt_transformation()
     assert stages(c) == [("dbt", "info"), ("dbt", "info")]
-    assert c.events.emitted[-1][3]["detail"]["rows"] == 3
+    _, _, message, kwargs = c.events.emitted[-1]
+    assert kwargs["detail"]["rows"] == 3
+    assert "3 staged row(s) merged into person (tenant_a1 person#1, tenant_a1 person#2, tenant_b2 person#7)" in message
 
 
 def test_event_writer_swallows_failures_and_backs_off(monkeypatch):

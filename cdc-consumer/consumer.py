@@ -255,13 +255,17 @@ class CDCConsumer:
                 print("dbt transformation completed successfully")
                 # Mark staging records as processed
                 cursor = self.db_conn.cursor()
-                cursor.execute("UPDATE person_staging SET processed = TRUE WHERE processed = FALSE")
-                rows = cursor.rowcount
+                cursor.execute("UPDATE person_staging SET processed = TRUE WHERE processed = FALSE "
+                               "RETURNING tenant_id, source_id")
+                records = cursor.fetchall()
+                rows = len(records)
                 self.db_conn.commit()
                 cursor.close()
                 duration = round(time.time() - started, 2)
-                self.emit('dbt', f"dbt run finished in {duration}s ({rows} staged rows processed)",
-                          detail={'duration_s': duration, 'rows': rows})
+                keys = [f"{tenant} person#{source_id}" for tenant, source_id in records]
+                shown = ', '.join(keys[:5]) + (f", +{rows - 5} more" if rows > 5 else '')
+                self.emit('dbt', f"dbt run finished in {duration}s: {rows} staged row(s) merged into person "
+                          f"({shown})", detail={'duration_s': duration, 'rows': rows, 'records': keys})
             else:
                 # dbt reports errors on stdout, so log the tail of both
                 print(f"dbt transformation failed:\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
@@ -325,7 +329,8 @@ class CDCConsumer:
 
                         tenant_id, operation, row = event
                         self.emit('consumer.received',
-                                  f"{tenant_id} person#{(row or {}).get('id')} {operation} received",
+                                  f"{tenant_id} person#{(row or {}).get('id')} {operation} change captured from "
+                                  f"legacy via Kafka ({msg.topic()})",
                                   tenant_id=tenant_id, legacy_id=(row or {}).get('id'),
                                   detail={'operation': operation, 'topic': msg.topic(),
                                           'partition': msg.partition(), 'offset': msg.offset()})
@@ -333,7 +338,7 @@ class CDCConsumer:
                         # Stage the record
                         self.stage_record(tenant_id, row, operation)
                         staged_count += 1
-                        self.emit('consumer.staged', f"{tenant_id} person#{row.get('id')} {operation} staged",
+                        self.emit('consumer.staged', f"{tenant_id} person#{row.get('id')} {operation} staged in new system (person_staging)",
                                   tenant_id=tenant_id, legacy_id=row.get('id'),
                                   detail={'operation': operation, 'topic': msg.topic(),
                                           'partition': msg.partition(), 'offset': msg.offset()})

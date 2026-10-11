@@ -73,6 +73,10 @@ def get_new_system_conn():
     return psycopg2.connect(**NEW_SYSTEM_DB, cursor_factory=RealDictCursor)
 
 
+def legacy_host(tenant_id):
+    return LEGACY_DB_CONFIG[tenant_id]['host']
+
+
 def emit(*args, **kwargs):
     """Record a pipeline event for the UI. Best effort: must never affect a request."""
     try:
@@ -181,8 +185,8 @@ def create_person():
         cursor.close()
         conn.close()
 
-        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy', tenant_id=tenant_id,
-             legacy_id=legacy_id)
+        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy DB ({legacy_host(tenant_id)})',
+             tenant_id=tenant_id, legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'message': f'Written to {tenant_id} legacy system (ID: {legacy_id}). Will sync back via CDC.',
@@ -250,6 +254,9 @@ def update_person():
         cursor.close()
         conn.close()
 
+        emit('api', f'{tenant_id} person#{legacy_id} UPDATE written to legacy DB ({legacy_host(tenant_id)})',
+             tenant_id=tenant_id, legacy_id=legacy_id)
+
         # Update modernized_only field in new system if provided
         if data.get('modernized_only'):
             new_conn = get_new_system_conn()
@@ -262,9 +269,9 @@ def update_person():
             new_conn.commit()
             new_cursor.close()
             new_conn.close()
+            emit('api', f'{tenant_id} person#{legacy_id} modernized_only written to new system (person table)',
+                 tenant_id=tenant_id, legacy_id=legacy_id)
 
-        emit('api', f'{tenant_id} person#{legacy_id} UPDATE written to legacy', tenant_id=tenant_id,
-             legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'message': 'Updated in legacy system. Will sync back via CDC.'
@@ -354,8 +361,8 @@ def create_legacy_person(tenant_id):
         cursor.close()
         conn.close()
 
-        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy', tenant_id=tenant_id,
-             legacy_id=legacy_id)
+        emit('api', f'{tenant_id} person#{legacy_id} INSERT written to legacy DB ({legacy_host(tenant_id)})',
+             tenant_id=tenant_id, legacy_id=legacy_id)
         return jsonify({
             'success': True,
             'legacy_id': legacy_id
@@ -463,8 +470,8 @@ def update_legacy_person(tenant_id, record_id):
         cursor.close()
         conn.close()
 
-        emit('api', f'{tenant_id} person#{record_id} UPDATE written to legacy', tenant_id=tenant_id,
-             legacy_id=record_id)
+        emit('api', f'{tenant_id} person#{record_id} UPDATE written to legacy DB ({legacy_host(tenant_id)})',
+             tenant_id=tenant_id, legacy_id=record_id)
         return jsonify({'success': True})
 
     except Exception as e:

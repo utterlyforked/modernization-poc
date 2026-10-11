@@ -175,15 +175,22 @@ def events(monkeypatch):
 def test_post_emits_an_api_event_for_the_record(client, db, events):
     client.post("/api/persons", json={**BODY, "tenant_id": "tenant_a1"})
     (stage, severity, message, kwargs), = events.emitted
-    assert (stage, severity, message) == ("api", "info", "tenant_a1 person#42 INSERT written to legacy")
+    assert (stage, severity, message) == ("api", "info", "tenant_a1 person#42 INSERT written to legacy DB (postgres-legacy-a1)")
     assert (kwargs["tenant_id"], kwargs["legacy_id"]) == ("tenant_a1", 42)
 
 
 def test_put_emits_an_api_event_for_the_record(client, db, events):
     client.put("/api/persons", json={**BODY, "tenant_id": "tenant_b1", "legacy_id": 9})
     (stage, _, message, kwargs), = events.emitted
-    assert (stage, message) == ("api", "tenant_b1 person#9 UPDATE written to legacy")
+    assert (stage, message) == ("api", "tenant_b1 person#9 UPDATE written to legacy DB (postgres-legacy-b1)")
     assert kwargs["legacy_id"] == 9
+
+
+def test_modernized_only_update_emits_a_new_system_event(client, db, events):
+    client.put("/api/persons", json={**BODY, "tenant_id": "tenant_a1", "legacy_id": 9, "modernized_only": "2024-06-01"})
+    assert [m for _, _, m, _ in events.emitted] == [
+        "tenant_a1 person#9 UPDATE written to legacy DB (postgres-legacy-a1)",
+        "tenant_a1 person#9 modernized_only written to new system (person table)"]
 
 
 def test_validation_failure_emits_a_warning(client, db, events):
