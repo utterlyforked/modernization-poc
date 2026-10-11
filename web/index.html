@@ -645,7 +645,6 @@
         .pp-time, .pp-tenant { color: var(--text-secondary); margin-right: 10px; }
         .pp-stage { background: rgba(139,92,246,0.3); color: #fff; border-radius: 4px; padding: 0 6px; margin-right: 10px; font-size: 11px; }
         .pp-detail { margin: 4px 0 4px 20px; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: 6px; white-space: pre-wrap; word-break: break-all; color: var(--text-primary); }
-        .pp-detail a { color: var(--accent-blue); }
     </style>
 </head>
 <body>
@@ -1512,11 +1511,6 @@
             renderPipelineEvents();
         }
 
-        function traceRecord(tenant, legacyId) {
-            document.getElementById('ppSearch').value = `${tenant} person#${legacyId}`;
-            renderPipelineEvents();
-        }
-
         function renderPipelineEvents() {
             const tenant = document.getElementById('ppTenant').value;
             const severity = document.getElementById('ppSeverity').value;
@@ -1531,9 +1525,7 @@
             list.innerHTML = shown.slice().reverse().map(e => {
                 let detail = '';
                 if (ppExpanded.has(e.id)) {
-                    const trace = e.legacy_id != null
-                        ? ` &mdash; <a href="#" onclick="event.stopPropagation(); traceRecord('${ppEscape(e.tenant_id)}', ${Number(e.legacy_id)}); return false;">trace this record</a>` : '';
-                    detail = `<div class="pp-detail">${ppEscape(e.source)} event #${e.id}${trace}\n${ppEscape(JSON.stringify(e.detail, null, 2) ?? '')}</div>`;
+                    detail = `<div class="pp-detail">${ppEscape(e.source)} event #${e.id}\n${ppEscape(JSON.stringify(e.detail, null, 2) ?? '')}</div>`;
                 }
                 return `<div class="pp-row ${ppEscape(e.severity)}" onclick="toggleEventDetail(${e.id})">`
                     + `<span class="pp-time">${new Date(e.ts).toLocaleTimeString()}</span>`

@@ -243,7 +243,7 @@ You should see:
 The web UI (http://localhost:8000) has a pane docked at the bottom that shows what the pipeline is doing, newest
 first: API writes, each Kafka message received and staged, retries, dead-lettered messages, dbt runs and Debezium
 connector state changes. Click a row for its detail (topic/partition/offset, error text, the raw payload for dead
-letters) and a link to trace that record (`tenant person#id`) through the stages. The header shows the error count (still
+letters). The header shows the error count (still
 visible when the pane is collapsed), connector states, the staging backlog and dead-letter count. Controls: pause,
 clear (view only), tenant and severity filters, free-text search.
 

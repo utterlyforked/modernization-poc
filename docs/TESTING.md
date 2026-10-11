@@ -233,7 +233,7 @@ curl http://localhost:5000/api/persons | jq ".[] | select(.legacy_id == $LEGACY_
 In the UI (http://localhost:8000) expand the pane at the bottom, then create or edit a person.
 
 **Expected:** within about 3 seconds the pane shows, newest first, `dbt` (finished), `consumer.staged`,
-`consumer.received` and `api` rows for that record (search `tenant_a1 person#<id>` to trace one record). Then:
+`consumer.received` and `api` rows for that record. Then:
 
 - `docker stop postgres-new-system`: the consumer logs a `consumer.retry` warning once the database is back (events
   can only be written while it is up). `docker start postgres-new-system` to recover.
