@@ -4,7 +4,7 @@ import sys
 import types
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-for sub in ("api", "cdc-consumer"):
+for sub in ("api", "cdc-consumer", "shared"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 try:

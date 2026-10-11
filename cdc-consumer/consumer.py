@@ -12,6 +12,8 @@ from confluent_kafka import Consumer, KafkaError, TopicPartition
 import psycopg2
 from psycopg2.extras import execute_values
 
+from pipeline_events import EventWriter
+
 # Configuration
 KAFKA_BOOTSTRAP = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
 DB_CONFIG = {
@@ -93,6 +95,8 @@ class CDCConsumer:
     def __init__(self):
         self.consumer = None
         self.db_conn = None
+        self.events = EventWriter(DB_CONFIG, 'cdc-consumer')
+        self.attempts = {}  # (topic, partition, offset) -> failed attempts so far
         self.setup_consumer()
         self.connect_db()
 
@@ -143,6 +147,13 @@ class CDCConsumer:
         """)
         self.db_conn.commit()
         cursor.close()
+
+    def emit(self, *args, **kwargs):
+        """Record a pipeline event for the UI. Best effort: must never affect staging or offset commits."""
+        try:
+            self.events.emit(*args, **kwargs)
+        except Exception as e:
+            print(f"pipeline event not written: {e}", flush=True)
 
     def reconnect_db(self):
         try:
@@ -207,9 +218,19 @@ class CDCConsumer:
             self.db_conn.rollback()
             raise
         print(f"☠️  Dead-lettered {msg.topic()}[{msg.partition()}]@{msg.offset()}: {error}", flush=True)
+        self.emit('consumer.dead_letter', f"dead-lettered {msg.topic()}@{msg.offset()}: {error}", severity='error',
+                  tenant_id=TENANT_MAPPING.get(msg.topic()),
+                  detail={'topic': msg.topic(), 'partition': msg.partition(), 'offset': msg.offset(),
+                          'error': f"{type(error).__name__}: {error}", 'raw_value': raw})
 
     def retry_later(self, msg):
         """Rewind to a message that was not committed, so it is delivered again after a pause"""
+        key = (msg.topic(), msg.partition(), msg.offset())
+        self.attempts[key] = self.attempts.get(key, 0) + 1
+        self.emit('consumer.retry', f"{msg.topic()}@{msg.offset()} not staged, retrying in {RETRY_DELAY}s "
+                  f"(attempt {self.attempts[key]})", severity='warn', tenant_id=TENANT_MAPPING.get(msg.topic()),
+                  detail={'topic': msg.topic(), 'partition': msg.partition(), 'offset': msg.offset(),
+                          'attempt': self.attempts[key]})
         time.sleep(RETRY_DELAY)
         try:
             self.db_conn.rollback()
@@ -221,6 +242,8 @@ class CDCConsumer:
         """Run dbt to transform staging -> final tables"""
         try:
             print("Running dbt transformation...")
+            started = time.time()
+            self.emit('dbt', 'dbt run started')
             result = subprocess.run(
                 ['dbt', 'run', '--project-dir', '/dbt', '--profiles-dir', '/dbt'],
                 capture_output=True,
@@ -232,15 +255,27 @@ class CDCConsumer:
                 print("dbt transformation completed successfully")
                 # Mark staging records as processed
                 cursor = self.db_conn.cursor()
-                cursor.execute("UPDATE person_staging SET processed = TRUE WHERE processed = FALSE")
+                cursor.execute("UPDATE person_staging SET processed = TRUE WHERE processed = FALSE "
+                               "RETURNING tenant_id, source_id")
+                records = cursor.fetchall()
+                rows = len(records)
                 self.db_conn.commit()
                 cursor.close()
+                duration = round(time.time() - started, 2)
+                keys = [f"{tenant} person#{source_id}" for tenant, source_id in records]
+                shown = ', '.join(keys[:5]) + (f", +{rows - 5} more" if rows > 5 else '')
+                self.emit('dbt', f"dbt run finished in {duration}s: {rows} staged row(s) merged into person "
+                          f"({shown})", detail={'duration_s': duration, 'rows': rows, 'records': keys})
             else:
                 # dbt reports errors on stdout, so log the tail of both
                 print(f"dbt transformation failed:\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
+                self.emit('dbt', 'dbt run failed', severity='error',
+                          detail={'returncode': result.returncode, 'stdout': result.stdout[-2000:],
+                                  'stderr': result.stderr[-2000:]})
 
         except Exception as e:
             print(f"Error running dbt: {e}")
+            self.emit('dbt', f"dbt run failed: {e}", severity='error', detail={'error': str(e)})
 
     def consume_messages(self):
         """Main consumer loop"""
@@ -293,10 +328,20 @@ class CDCConsumer:
                             continue
 
                         tenant_id, operation, row = event
+                        self.emit('consumer.received',
+                                  f"{tenant_id} person#{(row or {}).get('id')} {operation} change captured from "
+                                  f"legacy via Kafka ({msg.topic()})",
+                                  tenant_id=tenant_id, legacy_id=(row or {}).get('id'),
+                                  detail={'operation': operation, 'topic': msg.topic(),
+                                          'partition': msg.partition(), 'offset': msg.offset()})
 
                         # Stage the record
                         self.stage_record(tenant_id, row, operation)
                         staged_count += 1
+                        self.emit('consumer.staged', f"{tenant_id} person#{row.get('id')} {operation} staged in new system (person_staging)",
+                                  tenant_id=tenant_id, legacy_id=row.get('id'),
+                                  detail={'operation': operation, 'topic': msg.topic(),
+                                          'partition': msg.partition(), 'offset': msg.offset()})
                     except TRANSIENT_DB_ERRORS:
                         raise
                     except Exception as e:
@@ -305,6 +350,7 @@ class CDCConsumer:
 
                     # Commit offset
                     self.consumer.commit(msg)
+                    self.attempts.pop((msg.topic(), msg.partition(), msg.offset()), None)
 
                 except Exception as e:
                     print(f"❌ Error processing message, will retry: {e}", flush=True)

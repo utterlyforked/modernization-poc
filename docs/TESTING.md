@@ -228,6 +228,20 @@ curl http://localhost:5000/api/persons | jq ".[] | select(.legacy_id == $LEGACY_
 
 **Expected:** Record should show updated values after sync
 
+### Test 7b: Pipeline activity pane
+
+In the UI (http://localhost:8000) expand the pane at the bottom, then create or edit a person.
+
+**Expected:** within about 3 seconds the pane shows, newest first, `dbt` (finished), `consumer.staged`,
+`consumer.received` and `api` rows for that record. Then:
+
+- `docker stop postgres-new-system`: the consumer logs a `consumer.retry` warning once the database is back (events
+  can only be written while it is up). `docker start postgres-new-system` to recover.
+- `docker exec debezium curl -s -X PUT localhost:8083/connectors/legacy-a1-connector/pause` (resume with `/resume`):
+  the status line shows the connector as PAUSED and a `connector` event appears.
+- Delete a row in a legacy database: a `consumer.dead_letter` error appears (issue #4), the error badge counts it and
+  expanding the row shows the raw payload.
+
 ## Performance Tests
 
 ### Test 8: Bulk Insert Load
